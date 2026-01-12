@@ -1,0 +1,77 @@
+import React from 'react';
+import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import Dashboard from './pages/Dashboard';
+import AddDevice from './pages/AddDevice';
+import DeviceDetails from './pages/DeviceDetails';
+import History from './pages/History';
+import Login from './pages/Login';
+import { useAuth } from './contexts/AuthContext';
+
+// Protected Route Component
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { currentUser, loading } = useAuth();
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+      </div>
+    );
+  }
+  
+  if (!currentUser) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  return <>{children}</>;
+};
+
+const App: React.FC = () => {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        
+        <Route 
+          path="/" 
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/add" 
+          element={
+            <ProtectedRoute>
+              <AddDevice />
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/device/:id" 
+          element={
+            <ProtectedRoute>
+              <DeviceDetails />
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/history" 
+          element={
+            <ProtectedRoute>
+              <History />
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Router>
+  );
+};
+
+export default App;

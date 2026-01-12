@@ -1,0 +1,5 @@
+{
+  "name": "ChargeSafe",
+  "description": "A mobile-first device management app for pay-charge shops.",
+  "requestFramePermissions": []
+}
