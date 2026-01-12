@@ -182,14 +182,16 @@ const AddDevice: React.FC = () => {
   // VIEW: Input Form
   // ----------------------------------------------------------------------
   return (
-    <div className="min-h-screen bg-white md:bg-gray-50 flex justify-center">
-      <div className="w-full max-w-lg bg-white min-h-screen md:min-h-fit md:my-8 md:rounded-3xl md:shadow-lg flex flex-col">
+    // Use [100dvh] for mobile browsers (dynamic viewport height) to prevent address bar issues
+    <div className="h-[100dvh] bg-white md:bg-gray-50 flex justify-center">
+      <div className="w-full max-w-lg bg-white h-full md:h-auto md:min-h-fit md:my-8 md:rounded-3xl md:shadow-lg flex flex-col">
         
         {/* Navbar / Header */}
         <div className="sticky top-0 bg-white/95 backdrop-blur-sm z-10 px-6 py-4 border-b border-gray-100 flex items-center justify-between md:rounded-t-3xl">
           <button 
             onClick={() => navigate('/')} 
-            className="p-3 -ml-3 rounded-full hover:bg-gray-100 text-gray-600 transition-colors"
+            className="p-3 -ml-3 rounded-full hover:bg-gray-100 text-gray-600 transition-colors active:scale-90"
+            aria-label="Back"
           >
             <ArrowLeft size={24} />
           </button>
@@ -198,8 +200,8 @@ const AddDevice: React.FC = () => {
         </div>
 
         {/* Scrollable Form Content */}
-        <div className="flex-1 overflow-y-auto px-6 py-6">
-          <form id="add-device-form" onSubmit={handleSubmit} className="space-y-8">
+        <div className="flex-1 overflow-y-auto px-6 py-6 scroll-smooth">
+          <form id="add-device-form" onSubmit={handleSubmit} className="space-y-8 pb-10">
             
             {/* Start Time Banner */}
             <div className="flex items-center justify-between bg-blue-50/50 rounded-2xl p-4 border border-blue-100">
@@ -230,7 +232,7 @@ const AddDevice: React.FC = () => {
             {/* Step 1: Device Type - VISUAL GRID */}
             <div>
               <Label htmlFor="type" required>Select Device Type</Label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-4">
                 {[
                   { id: DeviceType.PHONE, label: 'Phone', icon: Smartphone },
                   { id: DeviceType.POWER_BANK, label: 'Power Bank', icon: Battery },
@@ -241,14 +243,14 @@ const AddDevice: React.FC = () => {
                     key={item.id}
                     type="button"
                     onClick={() => handleTypeSelect(item.id)}
-                    className={`flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all duration-200 ${
+                    className={`flex flex-col items-center justify-center p-5 rounded-2xl border-2 transition-all duration-200 active:scale-95 ${
                       formData.type === item.id
-                        ? 'border-primary-600 bg-primary-50 text-primary-700 ring-2 ring-primary-200 ring-offset-1'
+                        ? 'border-primary-600 bg-primary-50 text-primary-700 ring-2 ring-primary-200 ring-offset-1 shadow-sm'
                         : 'border-gray-100 bg-gray-50 text-gray-500 hover:border-gray-300 hover:bg-gray-100'
                     }`}
                   >
-                    <item.icon size={28} className="mb-2" />
-                    <span className="font-semibold text-sm">{item.label}</span>
+                    <item.icon size={32} className={`mb-3 ${formData.type === item.id ? 'stroke-[2.5px]' : 'stroke-2'}`} />
+                    <span className="font-bold text-sm">{item.label}</span>
                   </button>
                 ))}
               </div>
@@ -280,7 +282,7 @@ const AddDevice: React.FC = () => {
             {/* Step 4: Fee with Quick Chips */}
             <div>
               <Label htmlFor="fee">Charging Fee</Label>
-              <div className="relative mb-3">
+              <div className="relative mb-4">
                 <Input
                   name="fee"
                   type="number"
@@ -290,17 +292,17 @@ const AddDevice: React.FC = () => {
                   icon={Hash}
                   inputMode="numeric"
                 />
-                <span className="absolute right-5 top-[18px] text-gray-400 font-bold text-lg">₦</span>
+                <span className="absolute right-5 top-[18px] text-gray-400 font-bold text-lg pointer-events-none">₦</span>
               </div>
               
               {/* Quick Fee Chips */}
-              <div className="flex flex-wrap gap-2">
+              <div className="grid grid-cols-4 gap-2">
                  {['200', '300', '500', '1000'].map((amt) => (
                    <button
                      key={amt}
                      type="button"
                      onClick={() => handleQuickFee(amt)}
-                     className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-bold border border-gray-200 transition-colors"
+                     className="py-3 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-gray-700 rounded-xl text-sm font-bold border border-gray-200 transition-colors active:scale-95"
                    >
                      ₦{amt}
                    </button>
@@ -312,12 +314,12 @@ const AddDevice: React.FC = () => {
         </div>
 
         {/* Sticky Bottom Footer */}
-        <div className="p-6 border-t border-gray-100 bg-white md:rounded-b-3xl safe-pb">
+        <div className="p-6 border-t border-gray-100 bg-white md:rounded-b-3xl pb-safe shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-20">
           <Button 
             type="submit" 
             form="add-device-form" 
             fullWidth 
-            className="h-14 text-lg"
+            className="h-14 text-lg shadow-xl shadow-primary-600/20"
             isLoading={isLoading}
           >
             Check-in Device
