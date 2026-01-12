@@ -2,7 +2,6 @@
   "name": "chargesafe",
   "version": "1.0.0",
   "private": true,
-  "description": "Mobile-first device management app",
   "type": "module",
   "dependencies": {
     "firebase": "^10.8.1",
@@ -17,15 +16,14 @@
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "@types/qrcode": "^1.5.5",
-    "vite": "^5.1.4",
     "@vitejs/plugin-react": "^4.2.1",
+    "vite": "^5.1.4",
     "serve": "^14.2.1"
   },
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "start": "serve -s dist",
-    "check": "tsc --noEmit"
+    "start": "serve -s dist"
   }
 }

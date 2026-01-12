@@ -2,11 +2,8 @@ import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
 
-// Use Environment Variables
-// Note: In Vite, we use import.meta.env instead of process.env
-// We configured vite.config.ts to accept REACT_APP_ prefix
-
-// Fix: Cast import.meta to any to resolve TypeScript error 'Property env does not exist on type ImportMeta'
+// Access Vite Environment Variables
+// We cast import.meta to 'any' to avoid TS errors without a specific declaration file
 const env = (import.meta as any).env;
 
 const firebaseConfig = {
@@ -18,9 +15,9 @@ const firebaseConfig = {
   appId: env.REACT_APP_FIREBASE_APP_ID
 };
 
-// Fallback for development if env vars are missing (Optional safety check)
+// Safety check for development
 if (!firebaseConfig.apiKey) {
-  console.warn("Firebase Env Vars missing. App may not function correctly.");
+  console.warn("⚠️ Firebase Env Vars missing. Check your .env file or hosting settings.");
 }
 
 // Initialize Firebase
@@ -29,6 +26,7 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 
 // Enable Offline Persistence (Web)
+// This ensures the app works intermittently offline
 try {
   enableIndexedDbPersistence(db).catch((err) => {
     if (err.code === 'failed-precondition') {
