@@ -27,3 +27,17 @@ export interface FormState {
   fee: string;
   qrId?: string;
 }
+
+export interface ShopLocation {
+  city: string;
+  street: string;
+  landmark: string;
+}
+
+export interface ShopProfile {
+  uid?: string;
+  shopName: string;
+  email?: string;
+  phone?: string;
+  location?: ShopLocation;
+}

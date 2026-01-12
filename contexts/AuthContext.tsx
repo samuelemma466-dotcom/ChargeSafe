@@ -2,10 +2,11 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, onAuthStateChanged, signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase';
+import { ShopProfile } from '../types';
 
 interface AuthContextType {
   currentUser: User | null;
-  shopDetails: { shopName: string; phone?: string } | null;
+  shopDetails: ShopProfile | null;
   loading: boolean;
   logout: () => Promise<void>;
   refreshShopDetails: () => Promise<void>;
@@ -23,7 +24,7 @@ export const useAuth = () => {
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [shopDetails, setShopDetails] = useState<{ shopName: string; phone?: string } | null>(null);
+  const [shopDetails, setShopDetails] = useState<ShopProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchShopDetails = async (uid: string) => {
@@ -32,7 +33,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         const data = docSnap.data();
-        setShopDetails({ shopName: data.shopName, phone: data.phone });
+        setShopDetails({ 
+          shopName: data.shopName, 
+          phone: data.phone,
+          location: data.location || { city: '', street: '', landmark: '' },
+          email: data.email
+        });
       }
     } catch (error) {
       console.error("Error fetching shop details:", error);

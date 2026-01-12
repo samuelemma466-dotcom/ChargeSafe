@@ -7,6 +7,7 @@ import History from './pages/History';
 import Login from './pages/Login';
 import Scan from './pages/Scan';
 import Slots from './pages/Slots';
+import Profile from './pages/Profile';
 import { useAuth } from './contexts/AuthContext';
 
 // Protected Route Component
@@ -84,6 +85,15 @@ const App: React.FC = () => {
           element={
             <ProtectedRoute>
               <History />
+            </ProtectedRoute>
+          } 
+        />
+
+        <Route 
+          path="/profile" 
+          element={
+            <ProtectedRoute>
+              <Profile />
             </ProtectedRoute>
           } 
         />

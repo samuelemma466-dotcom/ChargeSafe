@@ -8,24 +8,22 @@ import {
   Battery, 
   HelpCircle, 
   Zap, 
-  CheckCircle, 
   Archive, 
   History,
-  LogOut,
   ScanLine,
   QrCode,
   LayoutGrid,
-  List
+  UserCircle
 } from 'lucide-react';
 import { collection, query, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { Input, Badge } from '../components/UI';
+import { Input } from '../components/UI';
 import { DeviceEntry, DeviceType, DeviceStatus } from '../types';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { currentUser, shopDetails, logout } = useAuth();
+  const { currentUser, shopDetails } = useAuth();
   
   const [devices, setDevices] = useState<DeviceEntry[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -78,15 +76,6 @@ const Dashboard: React.FC = () => {
     return filtered;
   }, [devices, searchQuery, activeTab]);
 
-  const getStatusColor = (status: DeviceStatus) => {
-    switch (status) {
-      case 'charging': return 'blue';
-      case 'ready': return 'green';
-      case 'collected': return 'gray';
-      default: return 'gray';
-    }
-  };
-
   const getIcon = (type: DeviceType) => {
     switch (type) {
       case DeviceType.PHONE: return Smartphone;
@@ -100,13 +89,6 @@ const Dashboard: React.FC = () => {
     navigate(`/device/${device.id}`, { state: { device } });
   };
 
-  const handleLogout = async () => {
-    if(window.confirm('Are you sure you want to log out?')) {
-      await logout();
-      navigate('/login');
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-50 pb-24 relative">
       
@@ -118,7 +100,9 @@ const Dashboard: React.FC = () => {
               <h1 className="text-xl font-black text-gray-900 truncate max-w-[200px]">
                 {shopDetails?.shopName || 'ChargeSafe'}
               </h1>
-              <p className="text-xs text-gray-400 font-medium mt-0.5">Device Manager</p>
+              <p className="text-xs text-gray-400 font-medium mt-0.5">
+                 {shopDetails?.location?.city ? `${shopDetails.location.city} • Device Manager` : 'Device Manager'}
+              </p>
             </div>
             <div className="flex space-x-2">
               <button 
@@ -303,11 +287,11 @@ const Dashboard: React.FC = () => {
         <div className="w-8"></div>
 
         <button 
-          onClick={handleLogout}
-          className="flex flex-col items-center text-gray-400 hover:text-red-500 transition-colors p-2"
+          onClick={() => navigate('/profile')}
+          className="flex flex-col items-center text-gray-400 hover:text-primary-600 transition-colors p-2"
         >
-          <LogOut size={24} />
-          <span className="text-[10px] font-bold mt-1">Logout</span>
+          <UserCircle size={24} />
+          <span className="text-[10px] font-bold mt-1">Profile</span>
         </button>
       </nav>
     </div>
