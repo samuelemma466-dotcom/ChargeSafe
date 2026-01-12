@@ -57,8 +57,8 @@ const Login: React.FC = () => {
       
       // Handle Firebase Auth Errors
       if (err.code === 'auth/invalid-credential') {
-        // Firebase now groups user-not-found and wrong-password into this error for security
-        msg = "Incorrect email or password. If you haven't registered yet, please create a shop account.";
+        // Firebase groups user-not-found and wrong-password into this error for security
+        msg = "Invalid email or password. If you haven't registered yet, please create a new account.";
       } else if (err.code === 'auth/user-not-found') {
         msg = "No account found with this email. Please register.";
       } else if (err.code === 'auth/wrong-password') {
@@ -84,6 +84,12 @@ const Login: React.FC = () => {
     setter(e.target.value);
   };
 
+  const toggleMode = () => {
+    setIsLogin(!isLogin);
+    setError('');
+    // Optional: Clear fields or keep them
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center p-6">
       
@@ -107,7 +113,7 @@ const Login: React.FC = () => {
 
         {error && (
           <div className="bg-red-50 text-red-600 text-sm p-3 rounded-xl mb-4 border border-red-100 flex items-start animate-in slide-in-from-top-1 fade-in duration-200">
-            <span className="mr-2">⚠️</span>
+            <span className="mr-2 flex-shrink-0">⚠️</span>
             <span>{error}</span>
           </div>
         )}
@@ -175,12 +181,7 @@ const Login: React.FC = () => {
 
         <div className="mt-6 text-center">
           <button 
-            onClick={() => {
-              setIsLogin(!isLogin);
-              setError('');
-              setEmail('');
-              setPassword('');
-            }}
+            onClick={toggleMode}
             className="text-sm text-primary-600 font-semibold hover:text-primary-800 transition-colors"
           >
             {isLogin ? "Don't have an account? Setup Shop" : "Already have an account? Login"}
@@ -194,7 +195,7 @@ const Login: React.FC = () => {
           Simple • Secure • Reliable
         </p>
         <p className="text-gray-300 text-[10px]">
-          v1.0.0
+          v1.0.1
         </p>
       </div>
     </div>

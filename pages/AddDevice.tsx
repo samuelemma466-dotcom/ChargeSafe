@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Laptop, Smartphone, Battery, HelpCircle, CheckCircle, Clock, Tag, User, Hash, Printer, Plus } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { ArrowLeft, Laptop, Smartphone, Battery, HelpCircle, CheckCircle, Clock, Tag, User, Hash, Printer, Plus, ScanLine } from 'lucide-react';
 import QRCode from 'qrcode';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -10,6 +10,7 @@ import { Button, Input, Label } from '../components/UI';
 
 const AddDevice: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { currentUser } = useAuth();
   const [step, setStep] = useState<'form' | 'success'>('form');
   const [isLoading, setIsLoading] = useState(false);
@@ -17,12 +18,16 @@ const AddDevice: React.FC = () => {
   // Initial time for display
   const [startTimeDisplay, setStartTimeDisplay] = useState('');
 
+  // Check for pre-scanned QR ID
+  const scannedQrId = (location.state as { qrId?: string })?.qrId;
+
   // Form State
   const [formData, setFormData] = useState<FormState>({
     type: DeviceType.PHONE,
     description: '',
     customerName: '',
-    fee: ''
+    fee: '',
+    qrId: scannedQrId || ''
   });
 
   // Success State
@@ -61,7 +66,10 @@ const AddDevice: React.FC = () => {
     try {
       const orderId = generateOrderNumber();
       
-      const qrCodeDataUrl = await QRCode.toDataURL(orderId, {
+      // Legacy QR generation (still useful if they want to print receipt)
+      const qrContent = formData.qrId || `Order: ${orderId}`;
+      
+      const qrCodeDataUrl = await QRCode.toDataURL(qrContent, {
         width: 300,
         margin: 2,
         color: {
@@ -72,6 +80,7 @@ const AddDevice: React.FC = () => {
 
       const newDevice: DeviceEntry = {
         id: orderId,
+        qrId: formData.qrId, // Store the physical card ID
         type: formData.type,
         description: formData.description,
         customerName: formData.customerName || 'Walk-in Customer',
@@ -127,17 +136,12 @@ const AddDevice: React.FC = () => {
 
           {/* Receipt Content */}
           <div className="p-8">
-             <div className="flex justify-center mb-8">
-               <div className="p-4 bg-white border-2 border-dashed border-gray-200 rounded-2xl">
-                 {registeredDevice.qrCodeBase64 && (
-                   <img 
-                      src={registeredDevice.qrCodeBase64} 
-                      alt={`QR Code for ${registeredDevice.id}`}
-                      className="w-48 h-48 object-contain"
-                   />
-                 )}
+             {registeredDevice.qrId && (
+               <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 mb-6 flex items-center justify-center space-x-2 text-yellow-800">
+                  <ScanLine size={16} />
+                  <span className="font-bold text-sm">Linked to Card: {registeredDevice.qrId}</span>
                </div>
-             </div>
+             )}
              
              <div className="space-y-4 bg-gray-50 p-4 rounded-xl">
                 <div className="flex justify-between items-center border-b border-gray-200 pb-3 border-dashed">
@@ -209,6 +213,19 @@ const AddDevice: React.FC = () => {
                   </div>
                </div>
             </div>
+
+             {/* PRE-FILLED QR ID DISPLAY */}
+             {formData.qrId && (
+               <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-xl animate-in slide-in-from-top-2">
+                 <div className="flex items-center">
+                   <ScanLine size={20} className="text-yellow-700 mr-2" />
+                   <div>
+                     <p className="text-xs font-bold text-yellow-600 uppercase">Linked Physical Card</p>
+                     <p className="font-bold text-gray-900">{formData.qrId}</p>
+                   </div>
+                 </div>
+               </div>
+             )}
 
             {/* Step 1: Device Type - VISUAL GRID */}
             <div>

@@ -5,6 +5,8 @@ import AddDevice from './pages/AddDevice';
 import DeviceDetails from './pages/DeviceDetails';
 import History from './pages/History';
 import Login from './pages/Login';
+import Scan from './pages/Scan';
+import Slots from './pages/Slots';
 import { useAuth } from './contexts/AuthContext';
 
 // Protected Route Component
@@ -37,6 +39,24 @@ const App: React.FC = () => {
           element={
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>
+          } 
+        />
+
+        <Route 
+          path="/scan" 
+          element={
+            <ProtectedRoute>
+              <Scan />
+            </ProtectedRoute>
+          } 
+        />
+
+        <Route 
+          path="/slots" 
+          element={
+            <ProtectedRoute>
+              <Slots />
             </ProtectedRoute>
           } 
         />

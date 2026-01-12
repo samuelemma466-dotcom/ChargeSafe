@@ -15,7 +15,9 @@ import {
   LogOut,
   Database,
   Sun,
-  Moon
+  Moon,
+  ScanLine,
+  QrCode
 } from 'lucide-react';
 import { collection, query, onSnapshot, writeBatch, doc } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -75,7 +77,8 @@ const Dashboard: React.FC = () => {
       const matchesSearch = 
         device.id.toLowerCase().includes(lowerQuery) || 
         device.customerName.toLowerCase().includes(lowerQuery) ||
-        device.description.toLowerCase().includes(lowerQuery);
+        device.description.toLowerCase().includes(lowerQuery) ||
+        (device.qrId && device.qrId.toLowerCase().includes(lowerQuery));
       
       const matchesStatus = statusFilter === 'all' || device.status === statusFilter;
       
@@ -91,7 +94,7 @@ const Dashboard: React.FC = () => {
     setLoading(true);
     const batch = writeBatch(db);
     const mockData: DeviceEntry[] = [
-      { id: 'CS-8492', type: DeviceType.PHONE, description: 'Tecno Spark 10', customerName: 'Mama Tobi', startTime: new Date().toISOString(), fee: 500, status: 'charging' },
+      { id: 'CS-8492', qrId: 'SLOT-01', type: DeviceType.PHONE, description: 'Tecno Spark 10', customerName: 'Mama Tobi', startTime: new Date().toISOString(), fee: 500, status: 'charging' },
       { id: 'CS-8493', type: DeviceType.POWER_BANK, description: 'Oraimo 20000mAh', customerName: 'Brother Paul', startTime: new Date(Date.now() - 3600000).toISOString(), fee: 300, status: 'ready' },
       { id: 'CS-8494', type: DeviceType.LAPTOP, description: 'HP Pavilion', customerName: 'Chinedu', startTime: new Date(Date.now() - 7200000).toISOString(), endTime: new Date().toISOString(), fee: 1000, status: 'collected' },
       { id: 'CS-8495', type: DeviceType.PHONE, description: 'Infinix Hot 30', customerName: 'Sola', startTime: new Date().toISOString(), fee: 500, status: 'charging' },
@@ -159,18 +162,35 @@ const Dashboard: React.FC = () => {
                 {shopDetails?.shopName || 'My Shop'}
               </h1>
             </div>
-            <button 
-              onClick={() => navigate('/add')}
-              className="bg-primary-600 text-white p-4 rounded-2xl shadow-lg shadow-primary-600/30 active:scale-95 transition-all hover:bg-primary-700"
-            >
-              <Plus size={24} strokeWidth={3} />
-            </button>
+            <div className="flex space-x-2">
+              <button 
+                onClick={() => navigate('/slots')}
+                className="bg-gray-100 text-gray-700 p-4 rounded-2xl shadow-sm border border-gray-200 active:scale-95 transition-all hover:bg-gray-200"
+                aria-label="Manage Slots"
+              >
+                <QrCode size={24} strokeWidth={2.5} />
+              </button>
+              <button 
+                onClick={() => navigate('/scan')}
+                className="bg-gray-900 text-white p-4 rounded-2xl shadow-lg shadow-gray-900/20 active:scale-95 transition-all hover:bg-gray-800"
+                aria-label="Scan QR Card"
+              >
+                <ScanLine size={24} strokeWidth={3} />
+              </button>
+              <button 
+                onClick={() => navigate('/add')}
+                className="bg-primary-600 text-white p-4 rounded-2xl shadow-lg shadow-primary-600/30 active:scale-95 transition-all hover:bg-primary-700"
+                aria-label="Add Device"
+              >
+                <Plus size={24} strokeWidth={3} />
+              </button>
+            </div>
           </div>
 
           {/* SEARCH BAR */}
           <div className="relative">
             <Input 
-              placeholder="Search by name, Order #..." 
+              placeholder="Search Name, Order #, or Card ID..." 
               icon={Search} 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -287,19 +307,26 @@ const Dashboard: React.FC = () => {
                              <span className="text-xs text-gray-500 font-medium">{device.description}</span>
                              <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
                              <span className="text-[10px] text-gray-400 font-mono tracking-wide">{device.id}</span>
+                             {device.qrId && (
+                               <span className="ml-1 bg-yellow-100 text-yellow-800 text-[10px] px-1.5 py-0.5 rounded font-bold border border-yellow-200">
+                                 {device.qrId}
+                               </span>
+                             )}
                           </div>
                         </div>
                       </div>
                       
-                      <div className="text-right">
-                         <div className="mb-1">
-                           <Badge variant={getStatusColor(device.status) as any}>
-                              {device.status}
-                           </Badge>
+                      <div className="flex items-center space-x-3">
+                         <div className="text-right">
+                           <div className="mb-1">
+                             <Badge variant={getStatusColor(device.status) as any}>
+                                {device.status}
+                             </Badge>
+                           </div>
+                           <p className="text-[11px] text-gray-400 font-medium">
+                             {new Date(device.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                           </p>
                          </div>
-                         <p className="text-[11px] text-gray-400 font-medium">
-                           {new Date(device.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                         </p>
                       </div>
                     </div>
                   </div>
