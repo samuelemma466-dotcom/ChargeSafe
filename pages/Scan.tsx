@@ -69,21 +69,15 @@ const Scan: React.FC = () => {
     setIsScanning(false);
     
     // 2. Process Content
-    // We assume the QR simply contains the ID, e.g., "CARD-01" or "CS-123"
-    // Clean the text just in case
     const cardId = qrContent.trim();
 
     if (!currentUser) return;
 
     try {
-      // 3. Check if this card is currently ACTIVE (charging or ready)
-      // We do NOT want to find 'collected' items, as that means the card is free.
+      // 3. Check if this card/slot is currently OCCUPIED (charging or ready)
+      // If it is 'collected', it means the slot is technically free for a new user.
       const devicesRef = collection(db, 'shops', currentUser.uid, 'devices');
       
-      // Query for active devices with this qrId
-      // Note: This requires client-side filtering if you don't have a composite index,
-      // but for small shops, fetching active ones is fine.
-      // Or we can just query by qrId and filter in memory.
       const q = query(devicesRef, where("qrId", "==", cardId));
       const querySnapshot = await getDocs(q);
 
@@ -91,16 +85,17 @@ const Scan: React.FC = () => {
 
       querySnapshot.forEach((doc) => {
         const d = doc.data() as DeviceEntry;
+        // Check for any non-completed status
         if (d.status === 'charging' || d.status === 'ready') {
           activeDevice = d;
         }
       });
 
       if (activeDevice) {
-        // CARD IS BUSY -> Go to Details
+        // SLOT IS OCCUPIED -> Go to Details to manage/collect
         navigate(`/device/${(activeDevice as DeviceEntry).id}`, { state: { device: activeDevice } });
       } else {
-        // CARD IS FREE -> Go to Add Device
+        // SLOT IS EMPTY -> Go to Add Device to register new
         navigate('/add', { state: { qrId: cardId } });
       }
 
@@ -115,14 +110,14 @@ const Scan: React.FC = () => {
   return (
     <div className="min-h-screen bg-black flex flex-col">
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-20 p-4 flex justify-between items-center bg-gradient-to-b from-black/70 to-transparent">
+      <div className="absolute top-0 left-0 right-0 z-20 p-4 pt-safe flex justify-between items-center bg-gradient-to-b from-black/70 to-transparent">
         <button 
           onClick={() => navigate('/')} 
           className="p-3 rounded-full bg-white/20 backdrop-blur-md text-white hover:bg-white/30 transition-all"
         >
           <ArrowLeft size={24} />
         </button>
-        <h1 className="text-white font-bold text-lg drop-shadow-md">Scan QR Card</h1>
+        <h1 className="text-white font-bold text-lg drop-shadow-md">Scan QR Slot</h1>
         <div className="w-10"></div>
       </div>
 
@@ -145,7 +140,7 @@ const Scan: React.FC = () => {
       </div>
 
       {/* Footer / Status */}
-      <div className="bg-white rounded-t-3xl p-8 min-h-[160px] flex flex-col items-center text-center -mt-6 z-10 relative">
+      <div className="bg-white rounded-t-3xl p-8 min-h-[160px] flex flex-col items-center text-center -mt-6 z-10 relative pb-safe">
         <div className="w-12 h-1.5 bg-gray-200 rounded-full mb-6"></div>
         
         {error ? (
@@ -155,8 +150,8 @@ const Scan: React.FC = () => {
            </div>
         ) : (
            <>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Point at Card</h2>
-            <p className="text-gray-400 text-sm">Align the QR code within the frame to scan.</p>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Scan Slot QR</h2>
+            <p className="text-gray-400 text-sm">Point your camera at a slot QR code to check-in or manage a device.</p>
            </>
         )}
       </div>

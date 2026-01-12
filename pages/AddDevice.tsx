@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Laptop, Smartphone, Battery, HelpCircle, CheckCircle, Clock, Tag, User, Hash, Printer, Plus, ScanLine } from 'lucide-react';
+import { ArrowLeft, Laptop, Smartphone, Battery, HelpCircle, CheckCircle, Clock, Tag, User, Hash, Printer, Plus, ScanLine, Wallet } from 'lucide-react';
 import QRCode from 'qrcode';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -61,6 +61,7 @@ const AddDevice: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUser) return;
+    if (isLoading) return; // Prevent double submit
     setIsLoading(true);
 
     try {
@@ -139,7 +140,7 @@ const AddDevice: React.FC = () => {
              {registeredDevice.qrId && (
                <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 mb-6 flex items-center justify-center space-x-2 text-yellow-800">
                   <ScanLine size={16} />
-                  <span className="font-bold text-sm">Linked to Card: {registeredDevice.qrId}</span>
+                  <span className="font-bold text-sm">Linked to Slot: {registeredDevice.qrId}</span>
                </div>
              )}
              
@@ -187,7 +188,7 @@ const AddDevice: React.FC = () => {
       <div className="w-full max-w-lg bg-white h-full md:h-auto md:min-h-fit md:my-8 md:rounded-3xl md:shadow-lg flex flex-col">
         
         {/* Navbar / Header */}
-        <div className="sticky top-0 bg-white/95 backdrop-blur-sm z-10 px-6 py-4 border-b border-gray-100 flex items-center justify-between md:rounded-t-3xl">
+        <div className="sticky top-0 bg-white/95 backdrop-blur-sm z-10 px-6 py-4 border-b border-gray-100 flex items-center justify-between md:rounded-t-3xl pt-safe">
           <button 
             onClick={() => navigate('/')} 
             className="p-3 -ml-3 rounded-full hover:bg-gray-100 text-gray-600 transition-colors active:scale-90"
@@ -216,23 +217,39 @@ const AddDevice: React.FC = () => {
                </div>
             </div>
 
-             {/* PRE-FILLED QR ID DISPLAY */}
-             {formData.qrId && (
-               <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-xl animate-in slide-in-from-top-2">
+             {/* PRE-FILLED QR ID / SCAN BUTTON */}
+             {formData.qrId ? (
+               <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-r-xl animate-in slide-in-from-top-2 flex justify-between items-center">
                  <div className="flex items-center">
-                   <ScanLine size={20} className="text-yellow-700 mr-2" />
+                   <ScanLine size={20} className="text-green-700 mr-2" />
                    <div>
-                     <p className="text-xs font-bold text-yellow-600 uppercase">Linked Physical Card</p>
+                     <p className="text-xs font-bold text-green-600 uppercase">Linked Slot</p>
                      <p className="font-bold text-gray-900">{formData.qrId}</p>
                    </div>
                  </div>
+                 <button 
+                   type="button" 
+                   onClick={() => setFormData(prev => ({ ...prev, qrId: '' }))}
+                   className="text-xs text-red-500 font-bold underline"
+                 >
+                   Remove
+                 </button>
                </div>
+             ) : (
+                <button 
+                  type="button" 
+                  onClick={() => navigate('/scan')}
+                  className="w-full py-4 border-2 border-dashed border-gray-300 rounded-2xl flex items-center justify-center text-gray-500 font-bold hover:bg-gray-50 hover:border-gray-400 transition-all active:scale-[0.98]"
+                >
+                  <ScanLine className="mr-2" size={20} />
+                  Scan Slot QR
+                </button>
              )}
 
             {/* Step 1: Device Type - VISUAL GRID */}
             <div>
               <Label htmlFor="type" required>Select Device Type</Label>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 {[
                   { id: DeviceType.PHONE, label: 'Phone', icon: Smartphone },
                   { id: DeviceType.POWER_BANK, label: 'Power Bank', icon: Battery },
@@ -249,7 +266,7 @@ const AddDevice: React.FC = () => {
                         : 'border-gray-100 bg-gray-50 text-gray-500 hover:border-gray-300 hover:bg-gray-100'
                     }`}
                   >
-                    <item.icon size={32} className={`mb-3 ${formData.type === item.id ? 'stroke-[2.5px]' : 'stroke-2'}`} />
+                    <item.icon size={30} className={`mb-3 ${formData.type === item.id ? 'stroke-[2.5px]' : 'stroke-2'}`} />
                     <span className="font-bold text-sm">{item.label}</span>
                   </button>
                 ))}
@@ -282,15 +299,16 @@ const AddDevice: React.FC = () => {
             {/* Step 4: Fee with Quick Chips */}
             <div>
               <Label htmlFor="fee">Charging Fee</Label>
-              <div className="relative mb-4">
+              <div className="relative mb-3">
                 <Input
                   name="fee"
                   type="number"
                   placeholder="0"
                   value={formData.fee}
                   onChange={handleChange}
-                  icon={Hash}
+                  icon={Wallet}
                   inputMode="numeric"
+                  className="text-lg font-bold text-gray-900"
                 />
                 <span className="absolute right-5 top-[18px] text-gray-400 font-bold text-lg pointer-events-none">₦</span>
               </div>
@@ -302,7 +320,11 @@ const AddDevice: React.FC = () => {
                      key={amt}
                      type="button"
                      onClick={() => handleQuickFee(amt)}
-                     className="py-3 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-gray-700 rounded-xl text-sm font-bold border border-gray-200 transition-colors active:scale-95"
+                     className={`py-3 rounded-xl text-sm font-bold border transition-colors active:scale-95 ${
+                        formData.fee === amt 
+                        ? 'bg-primary-600 text-white border-primary-600 shadow-md' 
+                        : 'bg-gray-100 text-gray-700 border-gray-100 hover:bg-gray-200'
+                     }`}
                    >
                      ₦{amt}
                    </button>
@@ -322,7 +344,7 @@ const AddDevice: React.FC = () => {
             className="h-14 text-lg shadow-xl shadow-primary-600/20"
             isLoading={isLoading}
           >
-            Check-in Device
+            {isLoading ? 'Saving...' : 'Check-in Device'}
           </Button>
         </div>
       </div>
