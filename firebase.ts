@@ -2,17 +2,24 @@ import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
 
-// Access Vite Environment Variables
-// We cast import.meta to 'any' to avoid TS errors without a specific declaration file
-const env = (import.meta as any).env;
+// Fix for missing types when vite/client is not available
+declare global {
+  interface ImportMeta {
+    env: any;
+  }
+}
+
+// Access Vite Environment Variables directly.
+// Note: We access import.meta.env.VAR_NAME directly to allow Vite to statically replace them at build time.
+// Assigning import.meta.env to a variable or casting it can break this replacement.
 
 const firebaseConfig = {
-  apiKey: env.REACT_APP_FIREBASE_API_KEY,
-  authDomain: env.REACT_APP_FIREBASE_AUTH_DOMAIN,
-  projectId: env.REACT_APP_FIREBASE_PROJECT_ID,
-  storageBucket: env.REACT_APP_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
-  appId: env.REACT_APP_FIREBASE_APP_ID
+  apiKey: import.meta.env.REACT_APP_FIREBASE_API_KEY,
+  authDomain: import.meta.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.REACT_APP_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.REACT_APP_FIREBASE_APP_ID
 };
 
 // Safety check for development
@@ -26,7 +33,6 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 
 // Enable Offline Persistence (Web)
-// This ensures the app works intermittently offline
 try {
   enableIndexedDbPersistence(db).catch((err) => {
     if (err.code === 'failed-precondition') {
