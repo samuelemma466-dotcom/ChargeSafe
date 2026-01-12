@@ -10,17 +10,17 @@ import {
   Zap, 
   CheckCircle, 
   Archive, 
-  Filter, 
   ChevronRight,
   History,
-  Settings,
   LogOut,
-  Database
+  Database,
+  Sun,
+  Moon
 } from 'lucide-react';
-import { collection, query, where, onSnapshot, writeBatch, doc } from 'firebase/firestore';
+import { collection, query, onSnapshot, writeBatch, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { Input, Badge, Button } from '../components/UI';
+import { Input, Badge } from '../components/UI';
 import { DeviceEntry, DeviceType, DeviceStatus } from '../types';
 
 const Dashboard: React.FC = () => {
@@ -31,6 +31,7 @@ const Dashboard: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | DeviceStatus>('all');
   const [loading, setLoading] = useState(true);
+  const [greeting, setGreeting] = useState('');
 
   // --- REAL-TIME DATA FETCHING ---
   useEffect(() => {
@@ -48,6 +49,12 @@ const Dashboard: React.FC = () => {
       setDevices(fetchedDevices);
       setLoading(false);
     });
+
+    // Set Greeting
+    const hour = new Date().getHours();
+    if (hour < 12) setGreeting('Good Morning');
+    else if (hour < 18) setGreeting('Good Afternoon');
+    else setGreeting('Good Evening');
 
     return () => unsubscribe();
   }, [currentUser]);
@@ -137,23 +144,26 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20 relative">
+    <div className="min-h-screen bg-gray-50 pb-24 relative">
       
       {/* HEADER SECTION */}
-      <header className="bg-white sticky top-0 z-10 border-b border-gray-200">
-        <div className="px-6 pt-12 pb-4">
-          <div className="flex justify-between items-center mb-6">
+      <header className="bg-white sticky top-0 z-10 border-b border-gray-100 shadow-sm">
+        <div className="px-6 pt-8 pb-4">
+          <div className="flex justify-between items-start mb-6">
             <div>
-              <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider">Dashboard</p>
-              <h1 className="text-2xl font-bold text-gray-900 truncate max-w-[200px]">
+              <div className="flex items-center text-gray-500 text-sm font-medium mb-1">
+                {greeting === 'Good Evening' ? <Moon size={14} className="mr-1.5" /> : <Sun size={14} className="mr-1.5" />}
+                {greeting}
+              </div>
+              <h1 className="text-2xl font-black text-gray-900 truncate max-w-[220px] leading-tight">
                 {shopDetails?.shopName || 'My Shop'}
               </h1>
             </div>
             <button 
               onClick={() => navigate('/add')}
-              className="bg-primary-600 text-white p-3 rounded-full shadow-lg shadow-primary-600/30 active:scale-95 transition-transform"
+              className="bg-primary-600 text-white p-4 rounded-2xl shadow-lg shadow-primary-600/30 active:scale-95 transition-all hover:bg-primary-700"
             >
-              <Plus size={24} />
+              <Plus size={24} strokeWidth={3} />
             </button>
           </div>
 
@@ -164,86 +174,94 @@ const Dashboard: React.FC = () => {
               icon={Search} 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-gray-50 border-gray-200"
+              className="bg-gray-50 border-transparent focus:bg-white"
             />
           </div>
         </div>
       </header>
 
       {/* STATS SUMMARY (Horizontal Scroll) */}
-      <div className="px-6 py-4 overflow-x-auto whitespace-nowrap hide-scrollbar flex space-x-3 bg-gray-50/50 backdrop-blur-sm">
+      <div className="px-6 py-5 overflow-x-auto whitespace-nowrap hide-scrollbar flex space-x-3 bg-gray-50/50 backdrop-blur-sm -mx-2 px-8">
         <button 
           onClick={() => setStatusFilter('charging')}
-          className={`inline-flex flex-col p-4 rounded-2xl border shadow-sm min-w-[130px] transition-all text-left ${statusFilter === 'charging' ? 'bg-blue-50 border-blue-300 ring-2 ring-blue-500 ring-opacity-20' : 'bg-white border-blue-100 hover:border-blue-200'}`}
+          className={`inline-flex flex-col p-4 rounded-3xl border shadow-sm min-w-[140px] transition-all text-left ${statusFilter === 'charging' ? 'bg-blue-600 border-blue-600 text-white shadow-blue-200' : 'bg-white border-white text-gray-600'}`}
         >
-          <div className="flex items-center space-x-2 text-blue-600 mb-2">
-            <Zap size={18} />
-            <span className="text-xs font-semibold uppercase">Charging</span>
+          <div className={`flex items-center space-x-2 mb-3 ${statusFilter === 'charging' ? 'text-blue-100' : 'text-blue-600'}`}>
+            <Zap size={20} fill={statusFilter === 'charging' ? "currentColor" : "none"} />
+            <span className="text-xs font-bold uppercase tracking-wider">Charging</span>
           </div>
-          <span className="text-2xl font-bold text-gray-900">{stats.charging}</span>
+          <span className={`text-3xl font-black ${statusFilter === 'charging' ? 'text-white' : 'text-gray-900'}`}>{stats.charging}</span>
         </button>
 
         <button 
           onClick={() => setStatusFilter('ready')}
-          className={`inline-flex flex-col p-4 rounded-2xl border shadow-sm min-w-[130px] transition-all text-left ${statusFilter === 'ready' ? 'bg-green-50 border-green-300 ring-2 ring-green-500 ring-opacity-20' : 'bg-white border-green-100 hover:border-green-200'}`}
+          className={`inline-flex flex-col p-4 rounded-3xl border shadow-sm min-w-[140px] transition-all text-left ${statusFilter === 'ready' ? 'bg-green-600 border-green-600 text-white shadow-green-200' : 'bg-white border-white text-gray-600'}`}
         >
-          <div className="flex items-center space-x-2 text-green-600 mb-2">
-            <CheckCircle size={18} />
-            <span className="text-xs font-semibold uppercase">Ready</span>
+          <div className={`flex items-center space-x-2 mb-3 ${statusFilter === 'ready' ? 'text-green-100' : 'text-green-600'}`}>
+            <CheckCircle size={20} />
+            <span className="text-xs font-bold uppercase tracking-wider">Ready</span>
           </div>
-          <span className="text-2xl font-bold text-gray-900">{stats.ready}</span>
+          <span className={`text-3xl font-black ${statusFilter === 'ready' ? 'text-white' : 'text-gray-900'}`}>{stats.ready}</span>
         </button>
 
         <button 
           onClick={() => setStatusFilter('collected')}
-          className={`inline-flex flex-col p-4 rounded-2xl border shadow-sm min-w-[130px] transition-all text-left ${statusFilter === 'collected' ? 'bg-gray-100 border-gray-300 ring-2 ring-gray-400 ring-opacity-20' : 'bg-white border-gray-100 hover:border-gray-200'}`}
+          className={`inline-flex flex-col p-4 rounded-3xl border shadow-sm min-w-[140px] transition-all text-left ${statusFilter === 'collected' ? 'bg-gray-800 border-gray-800 text-white shadow-gray-200' : 'bg-white border-white text-gray-600'}`}
         >
-          <div className="flex items-center space-x-2 text-gray-500 mb-2">
-            <Archive size={18} />
-            <span className="text-xs font-semibold uppercase">Collected</span>
+          <div className={`flex items-center space-x-2 mb-3 ${statusFilter === 'collected' ? 'text-gray-300' : 'text-gray-500'}`}>
+            <Archive size={20} />
+            <span className="text-xs font-bold uppercase tracking-wider">Collected</span>
           </div>
-          <span className="text-2xl font-bold text-gray-900">{stats.collected}</span>
+          <span className={`text-3xl font-black ${statusFilter === 'collected' ? 'text-white' : 'text-gray-900'}`}>{stats.collected}</span>
         </button>
       </div>
 
       {/* DEVICE LIST */}
       <main className="px-6 pb-6">
-        <div className="flex justify-between items-center mb-3 px-1">
+        <div className="flex justify-between items-center mb-4 px-1">
           <div className="flex items-center space-x-2">
-            <h2 className="text-sm font-semibold text-gray-500">
+            <h2 className="text-lg font-bold text-gray-800">
               {statusFilter === 'all' ? 'All Devices' : `${statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)} Devices`}
-              <span className="ml-1">({filteredDevices.length})</span>
             </h2>
+            <span className="bg-gray-200 text-gray-600 text-xs font-bold px-2 py-0.5 rounded-full">
+              {filteredDevices.length}
+            </span>
+          </div>
+          
+          <div className="flex items-center space-x-2">
             {statusFilter !== 'all' && (
               <button 
                 onClick={() => setStatusFilter('all')}
-                className="text-xs text-primary-600 font-medium bg-primary-50 px-2 py-0.5 rounded-full"
+                className="text-xs text-primary-600 font-bold bg-primary-50 px-3 py-1.5 rounded-full"
               >
-                Clear
+                Show All
+              </button>
+            )}
+            {/* SEED BUTTON (Helper for testing) */}
+            {devices.length === 0 && !loading && (
+              <button onClick={handleSeedDatabase} className="text-xs text-gray-400 flex items-center hover:text-primary-600 transition-colors">
+                <Database size={12} className="mr-1" /> Seed
               </button>
             )}
           </div>
-          
-          {/* SEED BUTTON (Helper for testing) */}
-          {devices.length === 0 && !loading && (
-             <button onClick={handleSeedDatabase} className="text-xs text-primary-600 flex items-center hover:underline">
-               <Database size={12} className="mr-1" /> Seed Data
-             </button>
-          )}
         </div>
 
         {loading ? (
-           <div className="flex justify-center py-12">
-             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+           <div className="flex flex-col items-center justify-center py-20 space-y-4 opacity-60">
+             <div className="animate-spin rounded-full h-10 w-10 border-b-4 border-primary-600"></div>
+             <p className="text-sm font-medium text-gray-500">Loading devices...</p>
            </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {filteredDevices.length === 0 ? (
-              <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-gray-200">
-                <div className="mx-auto w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mb-3">
-                  <Search className="text-gray-300" />
+              <div className="text-center py-16 bg-white rounded-3xl border-2 border-dashed border-gray-200 flex flex-col items-center">
+                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                  <Search className="text-gray-300 w-8 h-8" />
                 </div>
-                <p className="text-gray-500">No devices found</p>
+                <h3 className="text-gray-900 font-bold text-lg">No devices found</h3>
+                <p className="text-gray-400 text-sm mt-1 max-w-[200px]">
+                  {statusFilter !== 'all' ? `No ${statusFilter} devices at the moment.` : "Tap the + button to add your first customer."}
+                </p>
               </div>
             ) : (
               filteredDevices.map((device) => {
@@ -252,32 +270,37 @@ const Dashboard: React.FC = () => {
                   <div 
                     key={device.id} 
                     onClick={() => handleDeviceClick(device)}
-                    className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between active:bg-gray-50 transition-colors cursor-pointer group"
+                    className="bg-white p-5 rounded-3xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] active:scale-[0.98] transition-all cursor-pointer group border border-transparent hover:border-primary-100"
                   >
-                    <div className="flex items-center space-x-3.5">
-                      <div className={`h-12 w-12 rounded-xl flex items-center justify-center transition-colors ${
-                        device.status === 'charging' ? 'bg-blue-50 text-blue-600 group-hover:bg-blue-100' :
-                        device.status === 'ready' ? 'bg-green-50 text-green-600 group-hover:bg-green-100' :
-                        'bg-gray-100 text-gray-500 group-hover:bg-gray-200'
-                      }`}>
-                        <DeviceIcon size={22} />
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <div className={`h-14 w-14 rounded-2xl flex items-center justify-center transition-colors ${
+                          device.status === 'charging' ? 'bg-blue-50 text-blue-600' :
+                          device.status === 'ready' ? 'bg-green-50 text-green-600' :
+                          'bg-gray-100 text-gray-500'
+                        }`}>
+                          <DeviceIcon size={24} strokeWidth={2.5} />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-gray-900 text-base mb-0.5">{device.customerName}</h3>
+                          <div className="flex items-center space-x-2">
+                             <span className="text-xs text-gray-500 font-medium">{device.description}</span>
+                             <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
+                             <span className="text-[10px] text-gray-400 font-mono tracking-wide">{device.id}</span>
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="font-bold text-gray-900 text-[15px]">{device.customerName}</h3>
-                        <p className="text-xs text-gray-500 font-medium mb-1">{device.description}</p>
-                        <span className="text-[10px] text-gray-400 font-mono bg-gray-50 px-1.5 py-0.5 rounded">{device.id}</span>
+                      
+                      <div className="text-right">
+                         <div className="mb-1">
+                           <Badge variant={getStatusColor(device.status) as any}>
+                              {device.status}
+                           </Badge>
+                         </div>
+                         <p className="text-[11px] text-gray-400 font-medium">
+                           {new Date(device.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                         </p>
                       </div>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <div className="flex flex-col items-end space-y-2">
-                        <Badge variant={getStatusColor(device.status) as any}>
-                          {device.status === 'charging' ? 'Charging' : device.status === 'ready' ? 'Ready' : 'Done'}
-                        </Badge>
-                        <span className="text-[11px] text-gray-400 font-medium">
-                          {new Date(device.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
-                      <ChevronRight size={18} className="text-gray-300" />
                     </div>
                   </div>
                 );
@@ -288,29 +311,32 @@ const Dashboard: React.FC = () => {
       </main>
 
        {/* Bottom Nav */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-3 flex justify-around items-center z-50">
+      <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-100 px-6 py-2 flex justify-around items-center z-50 pb-safe">
         <button 
           onClick={() => navigate('/')}
-          className="flex flex-col items-center text-primary-600"
+          className="flex flex-col items-center text-primary-600 p-2"
         >
-          <Zap size={24} fill="currentColor" />
-          <span className="text-[10px] font-medium mt-1">Home</span>
+          <Zap size={26} fill="currentColor" />
+          <span className="text-[10px] font-bold mt-1">Home</span>
         </button>
         <button 
           onClick={() => navigate('/history')}
-          className="flex flex-col items-center text-gray-400 hover:text-gray-600 transition-colors"
+          className="flex flex-col items-center text-gray-400 hover:text-gray-600 transition-colors p-2"
         >
-          <History size={24} />
-          <span className="text-[10px] font-medium mt-1">History</span>
+          <History size={26} />
+          <span className="text-[10px] font-bold mt-1">History</span>
         </button>
         <button 
           onClick={handleLogout}
-          className="flex flex-col items-center text-gray-400 hover:text-red-500 transition-colors"
+          className="flex flex-col items-center text-gray-400 hover:text-red-500 transition-colors p-2"
         >
-          <LogOut size={24} />
-          <span className="text-[10px] font-medium mt-1">Logout</span>
+          <LogOut size={26} />
+          <span className="text-[10px] font-bold mt-1">Logout</span>
         </button>
       </nav>
+      
+      {/* iOS Safe Area Spacer */}
+      <div className="h-6 w-full bg-white fixed bottom-0 z-50"></div>
     </div>
   );
 };

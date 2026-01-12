@@ -18,7 +18,7 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { DeviceEntry, DeviceType, DeviceStatus } from '../types';
-import { Button, Input, Badge } from '../components/UI';
+import { Button, Input, Badge, Modal } from '../components/UI';
 
 const DeviceDetails: React.FC = () => {
   const navigate = useNavigate();
@@ -26,15 +26,14 @@ const DeviceDetails: React.FC = () => {
   const location = useLocation();
   const { currentUser } = useAuth();
   
-  // Try to get initial state from navigation, otherwise null (loading)
   const [device, setDevice] = useState<DeviceEntry | null>((location.state as { device: DeviceEntry })?.device || null);
   const [loading, setLoading] = useState(!device);
   const [error, setError] = useState('');
+  const [isCollectModalOpen, setIsCollectModalOpen] = useState(false);
 
   const [verificationCode, setVerificationCode] = useState('');
   const [toast, setToast] = useState<{ type: 'success' | 'error', message: string } | null>(null);
 
-  // Fetch device if not passed via state
   useEffect(() => {
     const fetchDevice = async () => {
       if (!device && currentUser && id) {
@@ -59,7 +58,6 @@ const DeviceDetails: React.FC = () => {
     fetchDevice();
   }, [id, currentUser, device]);
 
-  // Auto-hide toast
   useEffect(() => {
     if (toast) {
       const timer = setTimeout(() => setToast(null), 3000);
@@ -85,27 +83,25 @@ const DeviceDetails: React.FC = () => {
 
   const handleVerify = async () => {
     if (!device) return;
-    // Simple verification logic: check if entered code matches ID
     if (verificationCode.trim().toUpperCase() === device.id) {
-      setToast({ type: 'success', message: 'Device Verified – Hand over to Customer' });
-      
-      // Automatically mark as collected after verification
-      setTimeout(async () => {
-        await updateStatus('collected', { endTime: new Date().toISOString() });
-      }, 1500);
+      setToast({ type: 'success', message: 'Device Verified!' });
+      // Open modal instead of auto-collecting for safety
+      setIsCollectModalOpen(true);
     } else {
-      setToast({ type: 'error', message: 'Device does not match Order Number' });
+      setToast({ type: 'error', message: 'Wrong Order Number' });
     }
   };
 
   const markReady = async () => {
     await updateStatus('ready');
-    setToast({ type: 'success', message: 'Device marked as Ready for pickup' });
+    setToast({ type: 'success', message: 'Device marked as Ready' });
   };
 
-  const markCollected = async () => {
+  const confirmCollected = async () => {
     await updateStatus('collected', { endTime: new Date().toISOString() });
+    setIsCollectModalOpen(false);
     setToast({ type: 'success', message: 'Transaction Completed' });
+    navigate('/'); // Go back to dashboard after collection
   };
 
   const getIcon = (type: DeviceType) => {
@@ -137,11 +133,11 @@ const DeviceDetails: React.FC = () => {
         
         {/* TOAST NOTIFICATION */}
         {toast && (
-          <div className={`fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-xl shadow-xl flex items-center space-x-3 animate-in slide-in-from-top-4 fade-in duration-300 ${
+          <div className={`fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-2xl shadow-xl flex items-center space-x-3 animate-in slide-in-from-top-4 fade-in duration-300 ${
             toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
           }`}>
             {toast.type === 'success' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
-            <span className="font-medium text-sm">{toast.message}</span>
+            <span className="font-bold text-sm">{toast.message}</span>
           </div>
         )}
 
@@ -149,12 +145,12 @@ const DeviceDetails: React.FC = () => {
         <div className="sticky top-0 bg-white/95 backdrop-blur-sm z-10 px-6 py-4 border-b border-gray-100 flex items-center justify-between md:rounded-t-3xl">
           <button 
             onClick={() => navigate('/')} 
-            className="p-2 -ml-2 rounded-full hover:bg-gray-100 text-gray-600 transition-colors"
+            className="p-3 -ml-3 rounded-full hover:bg-gray-100 text-gray-600 transition-colors"
           >
             <ArrowLeft size={24} />
           </button>
           <h1 className="text-lg font-bold text-gray-900">Device Details</h1>
-          <button className="p-2 -mr-2 text-gray-400 hover:text-primary-600">
+          <button className="p-3 -mr-3 text-gray-400 hover:text-primary-600 rounded-full hover:bg-gray-50">
             <Share2 size={20} />
           </button>
         </div>
@@ -162,64 +158,64 @@ const DeviceDetails: React.FC = () => {
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           
           {/* 1. STATUS & ID CARD */}
-          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 text-center relative overflow-hidden">
-            <div className={`absolute top-0 left-0 right-0 h-1.5 ${
+          <div className="bg-white border border-gray-200 rounded-3xl shadow-sm p-8 text-center relative overflow-hidden">
+            <div className={`absolute top-0 left-0 right-0 h-2 ${
               device.status === 'charging' ? 'bg-blue-500' : 
               device.status === 'ready' ? 'bg-green-500' : 'bg-gray-400'
             }`} />
             
             <Badge 
               variant={getStatusColor(device.status) as any} 
-              className="mb-3 px-3 py-1 text-xs uppercase tracking-wider"
+              className="mb-4 px-4 py-1.5 text-xs font-bold"
             >
               {device.status}
             </Badge>
 
-            <h2 className="text-3xl font-black text-gray-900 mb-1">{device.id}</h2>
-            <p className="text-gray-400 text-xs font-mono mb-6">ORDER NUMBER</p>
+            <h2 className="text-4xl font-black text-gray-900 mb-1 tracking-tight">{device.id}</h2>
+            <p className="text-gray-400 text-xs font-bold tracking-widest uppercase mb-6">Order Number</p>
 
             <div className="flex justify-center mb-6">
-               <div className="p-3 bg-white border border-gray-100 rounded-xl shadow-inner min-h-[160px] flex items-center justify-center">
+               <div className="p-4 bg-white border-2 border-dashed border-gray-200 rounded-2xl flex items-center justify-center">
                  {device.qrCodeBase64 ? (
                    <img 
                       src={device.qrCodeBase64} 
                       alt="Device QR Code" 
-                      className={`w-36 h-36 object-contain ${device.status === 'collected' ? 'opacity-50 grayscale' : ''}`}
+                      className={`w-32 h-32 object-contain ${device.status === 'collected' ? 'opacity-30 grayscale' : ''}`}
                    />
                  ) : (
-                   <div className="text-gray-400 text-sm">QR Code not available</div>
+                   <div className="text-gray-400 text-sm font-medium">No Code</div>
                  )}
                </div>
             </div>
 
-            <div className="flex items-center justify-center space-x-2 text-sm text-gray-500">
+            <div className="flex items-center justify-center space-x-2 text-sm text-gray-500 bg-gray-50 py-2 px-4 rounded-full inline-flex">
               <Clock size={16} />
-              <span>Started: {new Date(device.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+              <span className="font-medium">Started: {new Date(device.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
             </div>
           </div>
 
           {/* 2. INFO DETAILS */}
-          <div className="bg-gray-50 rounded-2xl p-5 border border-gray-100 space-y-4">
-            <div className="flex items-start">
-              <div className="bg-white p-2.5 rounded-full text-primary-600 shadow-sm mr-4">
-                <DeviceIcon size={20} />
+          <div className="bg-gray-50 rounded-3xl p-6 border border-gray-100 space-y-5">
+            <div className="flex items-center">
+              <div className="bg-white p-3 rounded-2xl text-primary-600 shadow-sm mr-4 border border-gray-100">
+                <DeviceIcon size={24} />
               </div>
               <div className="flex-1">
-                <p className="text-xs text-gray-500 font-semibold uppercase mb-0.5">Device</p>
-                <p className="font-semibold text-gray-900">{device.description}</p>
-                <p className="text-sm text-gray-500">{device.type}</p>
+                <p className="text-xs text-gray-400 font-bold uppercase mb-0.5">Device</p>
+                <p className="font-bold text-gray-900 text-lg">{device.description}</p>
+                <p className="text-sm text-gray-500 font-medium">{device.type}</p>
               </div>
             </div>
             
             <div className="w-full h-px bg-gray-200" />
 
-            <div className="flex items-start">
-              <div className="bg-white p-2.5 rounded-full text-primary-600 shadow-sm mr-4">
-                <User size={20} />
+            <div className="flex items-center">
+              <div className="bg-white p-3 rounded-2xl text-primary-600 shadow-sm mr-4 border border-gray-100">
+                <User size={24} />
               </div>
               <div className="flex-1">
-                <p className="text-xs text-gray-500 font-semibold uppercase mb-0.5">Customer</p>
-                <p className="font-semibold text-gray-900">{device.customerName}</p>
+                <p className="text-xs text-gray-400 font-bold uppercase mb-0.5">Customer</p>
+                <p className="font-bold text-gray-900 text-lg">{device.customerName}</p>
               </div>
             </div>
 
@@ -227,8 +223,8 @@ const DeviceDetails: React.FC = () => {
               <>
                 <div className="w-full h-px bg-gray-200" />
                 <div className="flex items-center justify-between pt-1">
-                  <span className="text-gray-600 font-medium">Total Charge</span>
-                  <span className="text-xl font-bold text-primary-700">₦{device.fee.toLocaleString()}</span>
+                  <span className="text-gray-500 font-medium">To Pay</span>
+                  <span className="text-2xl font-black text-gray-900">₦{device.fee.toLocaleString()}</span>
                 </div>
               </>
             )}
@@ -236,70 +232,87 @@ const DeviceDetails: React.FC = () => {
 
           {/* 3. VERIFICATION SECTION (Only if not collected) */}
           {device.status !== 'collected' && (
-            <div className="bg-blue-50 border border-blue-100 rounded-2xl p-5">
+            <div className="bg-blue-50/60 border border-blue-100 rounded-3xl p-6">
               <div className="flex items-center mb-4 text-blue-800">
-                <Scan size={20} className="mr-2" />
-                <h3 className="font-bold text-base">Pickup Verification</h3>
+                <Scan size={22} className="mr-2" />
+                <h3 className="font-bold text-lg">Pickup Verification</h3>
               </div>
               
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <Input 
-                  label="Verify Order Number"
                   placeholder="Enter CS-####"
                   value={verificationCode}
                   onChange={(e) => setVerificationCode(e.target.value)}
-                  className="bg-white"
+                  className="bg-white text-center text-lg font-bold tracking-widest uppercase placeholder:normal-case placeholder:tracking-normal placeholder:font-normal"
                 />
                 <Button 
                   fullWidth 
                   onClick={handleVerify}
                   disabled={!verificationCode}
-                  className="shadow-md shadow-blue-200"
+                  className="shadow-md shadow-blue-200 bg-blue-600 hover:bg-blue-700"
                 >
-                  Verify Device
+                  Verify & Collect
                 </Button>
               </div>
-              <p className="text-xs text-blue-600/70 mt-3 text-center">
-                Ask customer for receipt or scan their code
-              </p>
             </div>
           )}
-
-          {/* 4. NOTES (Optional) */}
-          <div className="bg-yellow-50 border border-yellow-100 rounded-xl p-4">
-             <div className="flex items-start space-x-3">
-               <Tag size={18} className="text-yellow-600 mt-0.5" />
-               <div>
-                 <p className="text-xs font-bold text-yellow-700 uppercase mb-1">Shop Notes</p>
-                 <p className="text-sm text-yellow-800">Handle with care. Customer mentioned the charging port is slightly loose.</p>
-               </div>
-             </div>
-          </div>
         </div>
 
         {/* STICKY BOTTOM ACTIONS */}
         <div className="p-6 bg-white border-t border-gray-100 md:rounded-b-3xl">
           <div className="grid grid-cols-1 gap-3">
             {device.status === 'charging' && (
-              <Button fullWidth onClick={markReady} className="bg-gray-900 hover:bg-gray-800">
-                Stop Charging & Mark Ready
+              <Button fullWidth onClick={markReady} className="bg-gray-900 hover:bg-gray-800 h-14 text-lg">
+                Mark Ready for Pickup
               </Button>
             )}
             
             {device.status === 'ready' && (
-              <Button fullWidth onClick={markCollected} variant="primary" className="bg-green-600 hover:bg-green-700">
-                Skip Verify & Mark Collected
+              <Button fullWidth onClick={() => setIsCollectModalOpen(true)} variant="primary" className="bg-green-600 hover:bg-green-700 h-14 text-lg">
+                Confirm Collection
               </Button>
             )}
 
             {device.status === 'collected' && (
-              <div className="text-center py-2 flex items-center justify-center text-green-600 font-medium">
-                <CheckCircle size={20} className="mr-2" />
+              <div className="text-center py-2 flex items-center justify-center text-green-600 font-bold bg-green-50 rounded-2xl h-14">
+                <CheckCircle size={22} className="mr-2" />
                 Device Collected
               </div>
             )}
           </div>
         </div>
+
+        {/* CONFIRM COLLECTION MODAL */}
+        <Modal 
+          isOpen={isCollectModalOpen} 
+          onClose={() => setIsCollectModalOpen(false)}
+          title="Confirm Collection"
+        >
+          <div className="text-center">
+            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+              <CheckCircle className="h-6 w-6 text-green-600" />
+            </div>
+            <div className="mt-2">
+              <p className="text-sm text-gray-500">
+                Are you sure you want to mark <strong>{device.id}</strong> as collected?
+              </p>
+              {device.fee > 0 && (
+                <div className="mt-4 p-3 bg-gray-50 rounded-xl">
+                   <p className="text-xs text-gray-500 uppercase font-bold">Collect Payment</p>
+                   <p className="text-2xl font-black text-gray-900">₦{device.fee.toLocaleString()}</p>
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="mt-6 flex space-x-3">
+             <Button fullWidth variant="outline" onClick={() => setIsCollectModalOpen(false)}>
+               Cancel
+             </Button>
+             <Button fullWidth variant="primary" className="bg-green-600 hover:bg-green-700" onClick={confirmCollected}>
+               Yes, Collected
+             </Button>
+          </div>
+        </Modal>
         
       </div>
     </div>
