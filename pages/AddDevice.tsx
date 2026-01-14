@@ -332,6 +332,13 @@ const AddDevice: React.FC = () => {
               </div>
             </div>
 
+            {/* Branding */}
+            <div className="flex justify-center pt-4 opacity-50">
+              <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                Powered by BiggieVibes
+              </span>
+            </div>
+
           </form>
         </div>
 
