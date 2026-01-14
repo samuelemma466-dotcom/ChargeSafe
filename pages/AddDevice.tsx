@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Laptop, Smartphone, Battery, HelpCircle, CheckCircle, Clock, Tag, User, Printer, ScanLine, Wallet } from 'lucide-react';
+import { ArrowLeft, Laptop, Smartphone, Battery, HelpCircle, CheckCircle, Clock, Tag, User, Printer, ScanLine, Wallet, Phone, Camera, X, Share2 } from 'lucide-react';
 import QRCode from 'qrcode';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -26,15 +26,15 @@ const AddDevice: React.FC = () => {
     type: DeviceType.PHONE,
     description: '',
     customerName: '',
+    customerPhone: '',
     fee: '',
     qrId: scannedQrId || ''
   });
 
-  // Success State
-  const [registeredDevice, setRegisteredDevice] = useState<DeviceEntry | null>(null);
+  const [deviceImage, setDeviceImage] = useState<string>('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // Format current time nicely: "10:30 AM"
     const now = new Date();
     setStartTimeDisplay(now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
   }, []);
@@ -52,8 +52,47 @@ const AddDevice: React.FC = () => {
     setFormData(prev => ({ ...prev, fee: amount }));
   };
 
+  // --- IMAGE HANDLING ---
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        // Resize image to max 800px width to save space
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 800;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > MAX_WIDTH) {
+          height *= MAX_WIDTH / width;
+          width = MAX_WIDTH;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          setDeviceImage(canvas.toDataURL('image/jpeg', 0.7)); // 70% quality
+        }
+      };
+      if (event.target?.result) {
+        img.src = event.target.result as string;
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const clearImage = () => {
+    setDeviceImage('');
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   const generateOrderNumber = () => {
-    // Generate CS-#### (e.g., CS-8492)
     const randomNum = Math.floor(1000 + Math.random() * 9000);
     return `CS-${randomNum}`;
   };
@@ -61,38 +100,44 @@ const AddDevice: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUser) return;
-    if (isLoading) return; // Prevent double submit
+    if (isLoading) return;
     setIsLoading(true);
 
     try {
       const orderId = generateOrderNumber();
-      
-      // Legacy QR generation (still useful if they want to print receipt)
       const qrContent = formData.qrId || `Order: ${orderId}`;
       
       const qrCodeDataUrl = await QRCode.toDataURL(qrContent, {
         width: 300,
         margin: 2,
-        color: {
-          dark: '#1f2937',
-          light: '#ffffff',
-        },
+        color: { dark: '#1f2937', light: '#ffffff' },
       });
 
       const newDevice: DeviceEntry = {
         id: orderId,
-        qrId: formData.qrId, // Store the physical card ID
+        qrId: formData.qrId,
         type: formData.type,
         description: formData.description,
         customerName: formData.customerName || 'Walk-in Customer',
+        customerPhone: formData.customerPhone,
+        deviceImage: deviceImage,
         startTime: new Date().toISOString(),
         fee: parseFloat(formData.fee) || 0,
         status: 'charging',
         qrCodeBase64: qrCodeDataUrl
       };
 
-      // Save to Firestore
+      // 1. Save to Device History
       await setDoc(doc(db, 'shops', currentUser.uid, 'devices', orderId), newDevice);
+
+      // 2. Update Slots Collection (New Feature)
+      if (formData.qrId) {
+        await setDoc(doc(db, 'slots', formData.qrId), {
+            slotId: formData.qrId,
+            deviceId: orderId,
+            ownerId: currentUser.uid
+        }, { merge: true });
+      }
 
       setRegisteredDevice(newDevice);
       setStep('success');
@@ -103,6 +148,33 @@ const AddDevice: React.FC = () => {
       alert("Failed to register device. Please try again.");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const [registeredDevice, setRegisteredDevice] = useState<DeviceEntry | null>(null);
+
+  const handleShareReceipt = async () => {
+    if (!registeredDevice) return;
+    
+    const text = `ChargeSafe Receipt\nOrder: ${registeredDevice.id}\nCustomer: ${registeredDevice.customerName}\nDevice: ${registeredDevice.description}\nFee: ₦${registeredDevice.fee.toLocaleString()}\nDate: ${new Date(registeredDevice.startTime).toLocaleString()}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Receipt ${registeredDevice.id}`,
+          text: text,
+        });
+      } catch (err) {
+        console.error('Error sharing', err);
+      }
+    } else {
+       // Fallback for desktop or unsupported browsers
+       if(navigator.clipboard) {
+           await navigator.clipboard.writeText(text);
+           alert("Receipt details copied to clipboard!");
+       } else {
+           alert("Sharing not supported on this device.");
+       }
     }
   };
 
@@ -125,7 +197,6 @@ const AddDevice: React.FC = () => {
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6 animate-in fade-in duration-300">
         <div className="w-full max-w-md bg-white rounded-3xl shadow-xl overflow-hidden relative">
           
-          {/* Success Banner */}
           <div className="bg-green-500 p-8 text-center text-white relative overflow-hidden">
              <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
             <div className="bg-white/20 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm shadow-inner">
@@ -135,7 +206,6 @@ const AddDevice: React.FC = () => {
             <p className="text-green-100 font-mono text-lg tracking-wider opacity-90">{registeredDevice.id}</p>
           </div>
 
-          {/* Receipt Content */}
           <div className="p-8">
              {registeredDevice.qrId && (
                <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 mb-6 flex items-center justify-center space-x-2 text-yellow-800">
@@ -147,7 +217,12 @@ const AddDevice: React.FC = () => {
              <div className="space-y-4 bg-gray-50 p-4 rounded-xl">
                 <div className="flex justify-between items-center border-b border-gray-200 pb-3 border-dashed">
                   <span className="text-gray-500 text-sm font-medium">Customer</span>
-                  <span className="font-bold text-gray-900">{registeredDevice.customerName}</span>
+                  <span className="font-bold text-gray-900 text-right">
+                    {registeredDevice.customerName}
+                    {registeredDevice.customerPhone && (
+                      <div className="text-xs text-gray-400 font-normal">{registeredDevice.customerPhone}</div>
+                    )}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center border-b border-gray-200 pb-3 border-dashed">
                   <span className="text-gray-500 text-sm font-medium">Device</span>
@@ -165,12 +240,14 @@ const AddDevice: React.FC = () => {
              </div>
           </div>
 
-          {/* Actions */}
-          <div className="bg-gray-50 px-6 py-4 border-t border-gray-100 grid grid-cols-2 gap-4">
-            <Button variant="outline" onClick={() => window.print()} icon={Printer} className="text-sm">
+          <div className="bg-gray-50 px-6 py-4 border-t border-gray-100 grid grid-cols-3 gap-3">
+            <Button variant="outline" onClick={() => window.print()} icon={Printer} className="text-sm px-2">
               Print
             </Button>
-            <Button onClick={() => navigate('/')} className="text-sm">
+            <Button variant="secondary" onClick={handleShareReceipt} icon={Share2} className="text-sm px-2">
+              Share
+            </Button>
+            <Button onClick={() => navigate('/')} className="text-sm px-2">
               Done
             </Button>
           </div>
@@ -183,11 +260,10 @@ const AddDevice: React.FC = () => {
   // VIEW: Input Form
   // ----------------------------------------------------------------------
   return (
-    // Use [100dvh] for mobile browsers (dynamic viewport height) to prevent address bar issues
     <div className="h-[100dvh] bg-white md:bg-gray-50 flex justify-center">
       <div className="w-full max-w-lg bg-white h-full md:h-auto md:min-h-fit md:my-8 md:rounded-3xl md:shadow-lg flex flex-col">
         
-        {/* Navbar / Header */}
+        {/* Navbar */}
         <div className="sticky top-0 bg-white/95 backdrop-blur-sm z-10 px-6 py-4 border-b border-gray-100 flex items-center justify-between md:rounded-t-3xl pt-safe">
           <button 
             onClick={() => navigate('/')} 
@@ -200,7 +276,7 @@ const AddDevice: React.FC = () => {
           <div className="w-10" /> 
         </div>
 
-        {/* Scrollable Form Content */}
+        {/* Scrollable Form */}
         <div className="flex-1 overflow-y-auto px-6 py-6 scroll-smooth">
           <form id="add-device-form" onSubmit={handleSubmit} className="space-y-8 pb-10">
             
@@ -246,7 +322,7 @@ const AddDevice: React.FC = () => {
                 </button>
              )}
 
-            {/* Step 1: Device Type - VISUAL GRID */}
+            {/* Device Type */}
             <div>
               <Label htmlFor="type" required>Select Device Type</Label>
               <div className="grid grid-cols-2 gap-3">
@@ -273,7 +349,7 @@ const AddDevice: React.FC = () => {
               </div>
             </div>
 
-            {/* Step 2: Description */}
+            {/* Description */}
             <Input
               label="Description"
               name="description"
@@ -285,18 +361,81 @@ const AddDevice: React.FC = () => {
               autoComplete="off"
             />
 
-            {/* Step 3: Customer */}
-            <Input
-              label="Customer Name"
-              name="customerName"
-              placeholder="e.g. Mama Tobi"
-              value={formData.customerName}
-              onChange={handleChange}
-              icon={User}
-              autoComplete="off"
-            />
+            {/* Device Photo */}
+            <div>
+              <Label htmlFor="photo">Device Photo (Optional)</Label>
+              <input 
+                type="file" 
+                accept="image/*" 
+                capture="environment"
+                ref={fileInputRef}
+                className="hidden"
+                onChange={handleImageUpload}
+              />
+              
+              {!deviceImage ? (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full py-8 border-2 border-dashed border-gray-300 rounded-2xl flex flex-col items-center justify-center text-gray-500 hover:bg-gray-50 hover:border-gray-400 transition-colors"
+                >
+                  <div className="bg-gray-100 p-3 rounded-full mb-2">
+                    <Camera size={24} className="text-gray-600" />
+                  </div>
+                  <span className="font-bold text-sm">Take Photo of Device</span>
+                  <span className="text-xs mt-1">Capture condition or visual ID</span>
+                </button>
+              ) : (
+                <div className="relative rounded-2xl overflow-hidden border border-gray-200 group">
+                  <img src={deviceImage} alt="Device Preview" className="w-full h-48 object-cover" />
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      type="button"
+                      onClick={clearImage}
+                      className="bg-white/20 backdrop-blur-md text-white p-2 rounded-full hover:bg-white/30"
+                    >
+                      <X size={24} />
+                    </button>
+                  </div>
+                  <button
+                     type="button"
+                     onClick={clearImage}
+                     className="absolute top-2 right-2 bg-black/50 text-white p-1.5 rounded-full md:hidden"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              )}
+            </div>
 
-            {/* Step 4: Fee with Quick Chips */}
+            {/* Customer Info */}
+            <div className="space-y-5 bg-gray-50 p-5 rounded-3xl border border-gray-100">
+              <div className="flex items-center text-gray-400 font-bold text-xs uppercase tracking-wider mb-2">
+                 <User size={14} className="mr-1.5" /> Customer Details
+              </div>
+              
+              <Input
+                name="customerName"
+                placeholder="Name (e.g. Mama Tobi)"
+                value={formData.customerName}
+                onChange={handleChange}
+                className="bg-white"
+                autoComplete="off"
+              />
+
+              <Input
+                name="customerPhone"
+                type="tel"
+                placeholder="Phone (Optional)"
+                value={formData.customerPhone}
+                onChange={handleChange}
+                icon={Phone}
+                className="bg-white"
+                autoComplete="off"
+              />
+            </div>
+
+            {/* Fee */}
             <div>
               <Label htmlFor="fee">Charging Fee</Label>
               <div className="relative mb-3">
@@ -335,7 +474,7 @@ const AddDevice: React.FC = () => {
             {/* Branding */}
             <div className="flex justify-center pt-4 opacity-50">
               <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
-                Powered by BiggieVibes
+                Powered by ChargeSafe
               </span>
             </div>
 

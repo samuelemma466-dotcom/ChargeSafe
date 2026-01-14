@@ -33,11 +33,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         const data = docSnap.data();
+        // Explicitly map all fields required by the app
         setShopDetails({ 
+          uid: uid,
+          ownerId: data.ownerId,
           shopName: data.shopName, 
+          email: data.email,
           phone: data.phone,
+          
+          // New Data Fields
+          address: data.address,
+          city: data.city,
+          slots: data.slots,
+          coordinates: data.coordinates, // { lat, lng }
+
+          // Legacy / Fallback
           location: data.location || { city: '', street: '', landmark: '' },
-          email: data.email
         });
       }
     } catch (error) {

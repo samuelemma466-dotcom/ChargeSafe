@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Download, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Download, RefreshCw, Share2 } from 'lucide-react';
 import QRCode from 'qrcode';
 import { Button, Input } from '../components/UI';
 
@@ -46,10 +46,9 @@ const Slots: React.FC = () => {
     }
   };
 
-  const handleDownload = () => {
+  const generateCanvas = (callback: (canvas: HTMLCanvasElement) => void) => {
     if (!qrDataUrl) return;
 
-    // Use a canvas to compose the final image with text and white background
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     const size = 500;
@@ -81,13 +80,51 @@ const Slots: React.FC = () => {
         ctx.fillStyle = '#6B7280';
         ctx.fillText('ChargeSafe', size / 2, size + 50);
 
-        // 4. Trigger Download
+        callback(canvas);
+      };
+    }
+  };
+
+  const handleDownload = () => {
+    generateCanvas((canvas) => {
         const link = document.createElement('a');
         link.download = `${slotId}.png`;
         link.href = canvas.toDataURL('image/png');
         link.click();
-      };
-    }
+    });
+  };
+
+  const handleShare = () => {
+    generateCanvas((canvas) => {
+        canvas.toBlob(async (blob) => {
+            if (!blob) return;
+            const file = new File([blob], `${slotId}.png`, { type: 'image/png' });
+
+            if (navigator.share) {
+                const shareData: any = {
+                    title: `ChargeSafe Slot - ${slotId}`,
+                    text: 'Scan this QR code to check-in a device.',
+                };
+
+                // Check if file sharing is supported
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    shareData.files = [file];
+                } else {
+                    // Fallback to text if file sharing isn't supported
+                    shareData.text = `ChargeSafe Slot ID: ${slotId}`;
+                    shareData.url = window.location.href;
+                }
+
+                try {
+                    await navigator.share(shareData);
+                } catch (error) {
+                    console.log("Error sharing", error);
+                }
+            } else {
+                alert("Sharing not supported on this device");
+            }
+        });
+    });
   };
 
   return (
@@ -150,15 +187,24 @@ const Slots: React.FC = () => {
                 </div>
             </div>
 
-            {/* Download Action */}
-            <Button 
-                onClick={handleDownload} 
-                fullWidth 
-                className="h-16 text-lg shadow-xl shadow-primary-600/20"
-                icon={Download}
-            >
-                Download Image
-            </Button>
+            {/* Actions */}
+            <div className="grid grid-cols-2 gap-3">
+                <Button 
+                    onClick={handleDownload} 
+                    className="h-16 text-lg shadow-xl shadow-primary-600/20"
+                    icon={Download}
+                >
+                    Save
+                </Button>
+                <Button 
+                    onClick={handleShare} 
+                    variant="secondary"
+                    className="h-16 text-lg"
+                    icon={Share2}
+                >
+                    Share
+                </Button>
+            </div>
             
             <p className="text-center text-xs text-gray-400 mt-4">
                 Tip: Print this image and stick it on your charging shelf or card.

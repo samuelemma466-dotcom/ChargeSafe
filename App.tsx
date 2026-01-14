@@ -5,12 +5,14 @@ import AddDevice from './pages/AddDevice';
 import DeviceDetails from './pages/DeviceDetails';
 import History from './pages/History';
 import Login from './pages/Login';
+import RegisterShop from './shops/RegisterShop'; // Import from shops
+import EditShop from './shops/EditShop'; // Import from shops
+import ShopList from './shops/ShopList'; // Import from shops
 import Scan from './pages/Scan';
 import Slots from './pages/Slots';
 import Profile from './pages/Profile';
 import { useAuth } from './contexts/AuthContext';
 
-// Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { currentUser, loading } = useAuth();
   
@@ -34,6 +36,8 @@ const App: React.FC = () => {
     <Router>
       <Routes>
         <Route path="/login" element={<Login />} />
+        {/* Updated Register Route */}
+        <Route path="/register-shop" element={<RegisterShop />} />
         
         <Route 
           path="/" 
@@ -94,6 +98,25 @@ const App: React.FC = () => {
           element={
             <ProtectedRoute>
               <Profile />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* New Shop Management Routes */}
+        <Route 
+          path="/edit-shop" 
+          element={
+            <ProtectedRoute>
+              <EditShop />
+            </ProtectedRoute>
+          } 
+        />
+
+        <Route 
+          path="/shops" 
+          element={
+            <ProtectedRoute>
+              <ShopList />
             </ProtectedRoute>
           } 
         />

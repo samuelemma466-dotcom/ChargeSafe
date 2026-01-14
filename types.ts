@@ -13,19 +13,27 @@ export interface DeviceEntry {
   type: DeviceType;
   description: string;
   customerName: string;
+  customerPhone?: string; 
+  deviceImage?: string; 
   startTime: string; // ISO String
   endTime?: string; // ISO String, optional for active devices
   fee: number;
   status: DeviceStatus;
-  qrCodeBase64?: string; // Legacy: Generated Base64 Data URL for printing
+  qrCodeBase64?: string; 
 }
 
 export interface FormState {
   type: DeviceType;
   description: string;
   customerName: string;
+  customerPhone: string;
   fee: string;
   qrId?: string;
+}
+
+export interface Coordinates {
+  lat: number;
+  lng: number;
 }
 
 export interface ShopLocation {
@@ -36,8 +44,17 @@ export interface ShopLocation {
 
 export interface ShopProfile {
   uid?: string;
+  ownerId?: string; // Added
   shopName: string;
   email?: string;
   phone?: string;
-  location?: ShopLocation;
+  
+  // New Fields
+  address?: string; 
+  city?: string; 
+  coordinates?: Coordinates;
+  slots?: number;
+  
+  // Legacy support
+  location?: ShopLocation; 
 }
