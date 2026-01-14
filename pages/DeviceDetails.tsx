@@ -155,7 +155,9 @@ const DeviceDetails: React.FC = () => {
           text: text,
         });
       } catch (err) {
-        console.error('Error sharing', err);
+        if ((err as Error).name !== 'AbortError') {
+          console.error('Error sharing', err);
+        }
       }
     } else {
       navigator.clipboard.writeText(text);

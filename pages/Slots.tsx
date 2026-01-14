@@ -118,7 +118,10 @@ const Slots: React.FC = () => {
                 try {
                     await navigator.share(shareData);
                 } catch (error) {
-                    console.log("Error sharing", error);
+                    // Ignore AbortError when user cancels share
+                    if ((error as Error).name !== 'AbortError') {
+                        console.log("Error sharing", error);
+                    }
                 }
             } else {
                 alert("Sharing not supported on this device");

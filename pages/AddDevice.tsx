@@ -165,7 +165,10 @@ const AddDevice: React.FC = () => {
           text: text,
         });
       } catch (err) {
-        console.error('Error sharing', err);
+        // Ignore AbortError when user cancels share
+        if ((err as Error).name !== 'AbortError') {
+          console.error('Error sharing', err);
+        }
       }
     } else {
        // Fallback for desktop or unsupported browsers
