@@ -40,7 +40,7 @@ const Scan: React.FC = () => {
               await handleScan(decodedText);
             }
           },
-          (errorMessage: string) => {
+          (_errorMessage: string) => {
             // Parse error, ignore to avoid spamming console
           }
         );

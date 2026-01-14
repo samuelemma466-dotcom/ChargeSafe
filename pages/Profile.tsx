@@ -13,7 +13,7 @@ import {
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { Button, Input, Label } from '../components/UI';
+import { Button, Input } from '../components/UI';
 
 const Profile: React.FC = () => {
   const navigate = useNavigate();

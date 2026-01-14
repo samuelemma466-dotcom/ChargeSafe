@@ -10,7 +10,6 @@ import {
   AlertCircle, 
   Clock, 
   User, 
-  Tag, 
   Scan, 
   Share2 
 } from 'lucide-react';

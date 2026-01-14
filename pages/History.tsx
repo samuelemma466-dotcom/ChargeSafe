@@ -14,11 +14,11 @@ import {
   CheckCircle2,
   Clock
 } from 'lucide-react';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { collection, query, getDocs, orderBy } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { DeviceEntry, DeviceType } from '../types';
-import { Button, Input, Badge } from '../components/UI';
+import { Input, Badge } from '../components/UI';
 
 const History: React.FC = () => {
   const navigate = useNavigate();

@@ -19,7 +19,7 @@ import { collection, query, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { Input } from '../components/UI';
-import { DeviceEntry, DeviceType, DeviceStatus } from '../types';
+import { DeviceEntry, DeviceType } from '../types';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
