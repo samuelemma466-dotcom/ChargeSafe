@@ -65,19 +65,22 @@ const Login: React.FC = () => {
       console.error(err);
       let msg = "An error occurred. Please try again.";
       
+      const errorCode = err.code || '';
+      const errorMessage = err.message || '';
+
       // Handle Firebase Auth Errors
-      if (err.code === 'auth/invalid-credential') {
-        msg = "Invalid email or password.";
-      } else if (err.code === 'auth/user-not-found') {
+      if (errorCode === 'auth/invalid-credential' || errorMessage.includes('auth/invalid-credential')) {
+        msg = "Invalid email or password. If you are new, please switch to 'Setup Shop'.";
+      } else if (errorCode === 'auth/user-not-found') {
         msg = "No account found. Please register.";
-      } else if (err.code === 'auth/wrong-password') {
+      } else if (errorCode === 'auth/wrong-password') {
         msg = "Incorrect password.";
-      } else if (err.code === 'auth/email-already-in-use') {
+      } else if (errorCode === 'auth/email-already-in-use') {
         msg = "Email already registered. Please login.";
-      } else if (err.code === 'auth/weak-password') {
+      } else if (errorCode === 'auth/weak-password') {
         msg = "Password should be at least 6 characters.";
       } else if (err.message) {
-        msg = err.message;
+        msg = err.message.replace('Firebase: ', '').replace(' (auth/invalid-credential).', '');
       }
       
       setError(msg);
