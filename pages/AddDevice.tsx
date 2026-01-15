@@ -135,7 +135,10 @@ const AddDevice: React.FC = () => {
         await setDoc(doc(db, 'slots', formData.qrId), {
             slotId: formData.qrId,
             deviceId: orderId,
-            ownerId: currentUser.uid
+            ownerId: currentUser.uid,
+            shopId: currentUser.uid, // Ensuring ownership trace
+            status: 'occupied',
+            createdAt: new Date().toISOString()
         }, { merge: true });
       }
 

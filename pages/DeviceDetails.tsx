@@ -15,13 +15,15 @@ import {
   Phone,
   Maximize2,
   X,
-  QrCode
+  QrCode,
+  ShieldCheck,
+  ShieldAlert
 } from 'lucide-react';
 import { doc, getDoc, updateDoc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { DeviceEntry, DeviceType, DeviceStatus } from '../types';
-import { Button, Input, Badge, Modal } from '../components/UI';
+import { Button, Badge, Modal } from '../components/UI';
 
 const DeviceDetails: React.FC = () => {
   const navigate = useNavigate();
@@ -32,11 +34,10 @@ const DeviceDetails: React.FC = () => {
   const [device, setDevice] = useState<DeviceEntry | null>((location.state as { device: DeviceEntry })?.device || null);
   const [loading, setLoading] = useState(!device);
   const [error, setError] = useState('');
+  
+  // Checkout States
   const [isCollectModalOpen, setIsCollectModalOpen] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
-
-  // Manual Verification State
-  const [verificationCode, setVerificationCode] = useState('');
   const [toast, setToast] = useState<{ type: 'success' | 'error', message: string } | null>(null);
 
   // Secure Scanner State
@@ -98,49 +99,47 @@ const DeviceDetails: React.FC = () => {
       setDevice(prev => prev ? ({ ...prev, ...updateData }) : null);
     } catch (err) {
       console.error("Error updating status:", err);
-      setToast({ type: 'error', message: 'Failed to update status' });
-    }
-  };
-
-  // Manual Verify (Legacy/Fallback)
-  const handleVerify = async () => {
-    if (!device) return;
-    if (verificationCode.trim().toUpperCase() === device.id) {
-      setToast({ type: 'success', message: 'Device Verified!' });
-      setIsCollectModalOpen(true);
-    } else {
-      setToast({ type: 'error', message: 'Wrong Order Number' });
+      setToast({ type: 'error', message: 'Failed to update status. Check connection.' });
+      throw err;
     }
   };
 
   const markReady = async () => {
-    await updateStatus('ready');
-    setToast({ type: 'success', message: 'Device marked as Ready' });
+    try {
+      await updateStatus('ready');
+      setToast({ type: 'success', message: 'Device marked as Ready' });
+    } catch (e) {
+      // Error handled in updateStatus
+    }
   };
 
   const confirmCollected = async () => {
     if (!currentUser) return;
 
-    // 1. Update Device Status in Shop Collection
-    await updateStatus('collected', { endTime: new Date().toISOString() });
+    try {
+        // 1. Update Device Status in Shop Collection
+        await updateStatus('collected', { endTime: new Date().toISOString() });
 
-    // 2. Clear Slot in 'slots' collection if QR ID exists
-    if (device?.qrId) {
-       try {
-         const slotRef = doc(db, 'slots', device.qrId);
-         await setDoc(slotRef, {
-             slotId: device.qrId,
-             deviceId: null,
-             ownerId: currentUser.uid
-         }, { merge: true });
-       } catch (err) {
-         console.error("Error updating slot status:", err);
-       }
+        // 2. Clear Slot in 'slots' collection if QR ID exists
+        if (device?.qrId) {
+           const slotRef = doc(db, 'slots', device.qrId);
+           // Release the slot
+           await setDoc(slotRef, {
+               slotId: device.qrId,
+               deviceId: null,
+               status: 'available',
+               shopId: currentUser.uid,
+               updatedAt: new Date().toISOString()
+           }, { merge: true });
+        }
+
+        setIsCollectModalOpen(false);
+        setToast({ type: 'success', message: 'Transaction Completed' });
+        navigate('/'); 
+    } catch (err) {
+        console.error("Transaction failed", err);
+        setToast({ type: 'error', message: 'Transaction failed. Try again.' });
     }
-
-    setIsCollectModalOpen(false);
-    setToast({ type: 'success', message: 'Transaction Completed' });
-    navigate('/'); 
   };
 
   const handleShare = async () => {
@@ -185,16 +184,21 @@ const DeviceDetails: React.FC = () => {
             { facingMode: "environment" },
             { fps: 10, qrbox: { width: 250, height: 250 } },
             (decodedText: string) => {
-                // Validation: Check if scanned QR matches the device's assigned QR ID
-                if (device && decodedText === device.qrId) {
+                const scannedId = decodedText.trim();
+                
+                // 1. Validate Scanned ID against Device Slot
+                if (device && scannedId === device.qrId) {
+                    // MATCH FOUND
+                    if (navigator.vibrate) navigator.vibrate(200);
                     scanner.stop().then(() => {
                         scanner.clear();
                         setIsScanning(false);
-                        // Valid Slot -> Execute Checkout
-                        confirmCollected();
+                        setIsCollectModalOpen(true); // Open modal immediately after success
                     });
                 } else {
-                    setScanError(`Invalid Slot! Scanned: ${decodedText}`);
+                    // MISMATCH
+                    if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+                    setScanError(`Mismatch! Device is in ${device?.qrId}, but you scanned ${scannedId}`);
                 }
             },
             () => {}
@@ -249,7 +253,7 @@ const DeviceDetails: React.FC = () => {
                   <button onClick={stopScanner} className="p-3 bg-white/20 rounded-full text-white backdrop-blur-sm">
                       <X size={24} />
                   </button>
-                  <h2 className="text-white font-bold text-lg">Scan Slot {device.qrId}</h2>
+                  <h2 className="text-white font-bold text-lg">Verify Slot {device.qrId}</h2>
                   <div className="w-10"></div>
               </div>
               
@@ -258,17 +262,21 @@ const DeviceDetails: React.FC = () => {
                    
                    {/* Validation Feedback Overlay */}
                    {scanError && (
-                       <div className="absolute top-1/2 left-0 right-0 mt-36 text-center">
-                           <div className="inline-flex items-center bg-red-600 text-white px-4 py-2 rounded-full font-bold shadow-lg animate-bounce">
-                               <AlertCircle size={20} className="mr-2" />
-                               {scanError}
+                       <div className="absolute top-1/2 left-0 right-0 mt-36 text-center px-6">
+                           <div className="inline-block bg-red-600 text-white px-6 py-4 rounded-2xl font-bold shadow-xl animate-bounce border-2 border-white/20">
+                               <div className="flex items-center justify-center mb-1">
+                                   <ShieldAlert size={24} className="mr-2" />
+                                   <span>Security Mismatch</span>
+                               </div>
+                               <div className="text-sm font-normal opacity-90">{scanError}</div>
                            </div>
                        </div>
                    )}
               </div>
 
               <div className="p-6 pb-10 bg-gray-900 text-center text-gray-400">
-                  <p>Scan the QR code attached to the charging slot to verify and collect this device.</p>
+                  <p className="font-bold text-white mb-2">Security Check Required</p>
+                  <p className="text-sm">Scan QR code {device.qrId} to release this device.</p>
               </div>
           </div>
       )}
@@ -395,47 +403,43 @@ const DeviceDetails: React.FC = () => {
 
           {/* 3. VERIFICATION SECTION */}
           {device.status !== 'collected' && (
-            <div className={`border rounded-3xl p-6 ${device.qrId ? 'bg-yellow-50/60 border-yellow-100' : 'bg-blue-50/60 border-blue-100'}`}>
-              <div className={`flex items-center mb-4 ${device.qrId ? 'text-yellow-800' : 'text-blue-800'}`}>
-                {device.qrId ? <QrCode size={22} className="mr-2" /> : <Scan size={22} className="mr-2" />}
+            <div className={`border rounded-3xl p-6 ${device.qrId ? 'bg-yellow-50/60 border-yellow-200 shadow-sm' : 'bg-blue-50/60 border-blue-100'}`}>
+              <div className={`flex items-center mb-4 ${device.qrId ? 'text-yellow-900' : 'text-blue-800'}`}>
+                {device.qrId ? <ShieldCheck size={22} className="mr-2" /> : <Scan size={22} className="mr-2" />}
                 <h3 className="font-bold text-lg">
-                    {device.qrId ? 'Secure Checkout' : 'Pickup Verification'}
+                    {device.qrId ? 'Security Check' : 'Pickup Verification'}
                 </h3>
               </div>
               
               {device.qrId ? (
                   // Secure Flow: Must Scan Slot
                   <div className="text-center">
-                      <p className="text-sm text-gray-600 mb-4">
-                          This device is secured in <strong>{device.qrId}</strong>. 
-                          You must scan the slot QR code to checkout.
+                      <p className="text-sm text-gray-700 font-medium mb-4">
+                          Device locked to slot <strong>{device.qrId}</strong>.
                       </p>
                       <Button 
                         fullWidth 
                         onClick={startScanner}
                         icon={Scan}
-                        className="shadow-md shadow-yellow-200 bg-yellow-600 hover:bg-yellow-700 text-white border-transparent"
+                        className="shadow-md shadow-yellow-500/20 bg-yellow-600 hover:bg-yellow-700 text-white border-transparent py-4 text-base"
                       >
-                        Scan Slot to Collect
+                        Scan Slot to Release
                       </Button>
+                      <p className="text-xs text-gray-400 mt-3 flex items-center justify-center">
+                          <ShieldCheck size={12} className="mr-1" /> Manual checkout disabled
+                      </p>
                   </div>
               ) : (
-                  // Manual Flow (Legacy/Walk-in)
-                  <div className="space-y-4">
-                    <Input 
-                      placeholder="Enter CS-####"
-                      value={verificationCode}
-                      onChange={(e) => setVerificationCode(e.target.value)}
-                      className="bg-white text-center text-lg font-bold tracking-widest uppercase placeholder:normal-case placeholder:tracking-normal placeholder:font-normal"
-                    />
-                    <Button 
-                      fullWidth 
-                      onClick={handleVerify}
-                      disabled={!verificationCode}
-                      className="shadow-md shadow-blue-200 bg-blue-600 hover:bg-blue-700"
-                    >
-                      Verify & Collect
-                    </Button>
+                  // Manual Flow (Legacy/Walk-in without QR)
+                  <div className="text-center p-4 bg-white rounded-xl border border-blue-100">
+                     <p className="text-gray-500 text-sm mb-4">No security slot assigned. Please verify customer identity manually.</p>
+                     <Button 
+                        fullWidth 
+                        onClick={() => setIsCollectModalOpen(true)}
+                        className="bg-blue-600 hover:bg-blue-700"
+                     >
+                        Confirm Collection
+                     </Button>
                   </div>
               )}
             </div>

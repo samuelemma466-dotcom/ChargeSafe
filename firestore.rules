@@ -1,0 +1,41 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // Shops Collection
+    // Structure: shops/{userId}
+    match /shops/{userId} {
+      allow read, write: if isAuthenticated() && isOwner(userId);
+
+      // Devices Subcollection
+      // Structure: shops/{userId}/devices/{deviceId}
+      match /devices/{deviceId} {
+        allow read, write: if isAuthenticated() && isOwner(userId);
+      }
+    }
+    
+    // Slots Collection
+    // Structure: slots/{slotId}
+    // Access control based on 'shopId' or 'ownerId' field in document would require strict queries.
+    // Ideally, slots should be a subcollection of shops, but for root access:
+    match /slots/{slotId} {
+      // Allow creation/read if authenticated
+      allow read, create: if isAuthenticated();
+      
+      // Allow update if the user owns the slot
+      allow update, delete: if isAuthenticated() && (
+        resource.data.ownerId == request.auth.uid || 
+        resource.data.shopId == request.auth.uid
+      );
+    }
+  }
+}
