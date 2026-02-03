@@ -23,10 +23,10 @@ const RegisterShop: React.FC = () => {
   const [phone, setPhone] = useState('');
   
   // Data Storage Fields
-  const [address, setAddress] = useState(''); // Stores 'address'
+  const [address, setAddress] = useState(''); 
   const [city, setCity] = useState(''); 
-  const [slots, setSlots] = useState(''); // Stores 'slots'
-  const [coordinates, setCoordinates] = useState<Coordinates>({ lat: 0, lng: 0 }); // Stores 'coordinates'
+  const [slots, setSlots] = useState(''); 
+  const [coordinates, setCoordinates] = useState<Coordinates>({ lat: 0, lng: 0 });
 
   const handleGetLocation = () => {
     if (!navigator.geolocation) {
@@ -63,21 +63,16 @@ const RegisterShop: React.FC = () => {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // --- SAVE TO FIRESTORE ---
-      // Mapping strict requirements: 
-      // shopName -> shopName, address -> address, coordinates -> coordinates, slots -> slots, ownerId -> uid
       await setDoc(doc(db, 'shops', user.uid), {
         uid: user.uid,
-        ownerId: user.uid, // Required field
+        ownerId: user.uid,
         email: user.email,
         shopName: shopName.trim(),
         phone: phone.trim(),
         address: address.trim(),
-        city: city.trim(), // Optional but good for UI
+        city: city.trim(),
         slots: parseInt(slots) || 0,
         coordinates: coordinates,
-        
-        // Backward compatibility
         location: {
             city: city.trim(),
             street: address.trim(),
@@ -105,18 +100,18 @@ const RegisterShop: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center p-6 py-10">
+    <div className="min-h-screen bg-slate-950 flex flex-col justify-center items-center p-6 py-10 text-slate-200">
       <div className="text-center mb-8">
-        <div className="w-16 h-16 bg-primary-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary-600/30">
+        <div className="w-16 h-16 bg-primary-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary-500/20">
           <Store size={32} className="text-white" />
         </div>
-        <h1 className="text-2xl font-black text-gray-900">Setup Shop</h1>
-        <p className="text-gray-500 text-sm">Create your ChargeSafe account</p>
+        <h1 className="text-2xl font-black text-white">Setup Shop</h1>
+        <p className="text-slate-500 text-sm">Create your ChargeSafe account</p>
       </div>
 
-      <div className="w-full max-w-md bg-white rounded-3xl shadow-xl shadow-gray-200/50 p-8 animate-in fade-in slide-in-from-bottom-5">
+      <div className="w-full max-w-md bg-slate-900 rounded-3xl shadow-xl shadow-black/50 p-8 animate-in fade-in slide-in-from-bottom-5 border border-slate-800">
         {error && (
-          <div className="bg-red-50 text-red-600 text-sm p-3 rounded-xl mb-6 border border-red-100 flex items-start">
+          <div className="bg-red-500/10 text-red-400 text-sm p-3 rounded-xl mb-6 border border-red-500/20 flex items-start">
             <span className="mr-2">⚠️</span>
             <span>{error}</span>
           </div>
@@ -147,8 +142,8 @@ const RegisterShop: React.FC = () => {
             />
           </div>
 
-          <div className="pt-4 border-t border-gray-100 mt-4 space-y-5">
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Shop Profile</p>
+          <div className="pt-4 border-t border-slate-800 mt-4 space-y-5">
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Shop Profile</p>
               
               <Input
                 label="Shop Name"
@@ -170,14 +165,14 @@ const RegisterShop: React.FC = () => {
                 autoComplete="tel"
               />
 
-              <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 space-y-4">
+              <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-800 space-y-4">
                  <div className="flex items-center justify-between">
-                    <div className="flex items-center text-gray-500">
+                    <div className="flex items-center text-slate-500">
                         <MapPin size={16} className="mr-2" />
                         <span className="text-xs font-bold uppercase">Location Data</span>
                     </div>
                     {coordinates.lat !== 0 && (
-                        <div className="flex items-center space-x-1 text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold">
+                        <div className="flex items-center space-x-1 text-[10px] bg-green-500/10 text-green-400 px-2 py-0.5 rounded-full font-bold border border-green-500/20">
                             <Crosshair size={10} />
                             <span>{coordinates.lat.toFixed(4)}, {coordinates.lng.toFixed(4)}</span>
                         </div>
@@ -189,21 +184,21 @@ const RegisterShop: React.FC = () => {
                     value={address}
                     onChange={handleInputChange(setAddress)}
                     required
-                    className="bg-white"
+                    className="bg-slate-900"
                  />
 
                  <Input
                     placeholder="City"
                     value={city}
                     onChange={handleInputChange(setCity)}
-                    className="bg-white"
+                    className="bg-slate-900"
                  />
 
                  <button
                     type="button"
                     onClick={handleGetLocation}
                     disabled={isLocating}
-                    className="w-full flex items-center justify-center py-3 bg-white border border-gray-200 rounded-xl text-sm font-bold text-primary-600 hover:bg-gray-50 transition-colors shadow-sm"
+                    className="w-full flex items-center justify-center py-3 bg-slate-800 border border-slate-700 rounded-xl text-sm font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition-colors shadow-sm"
                  >
                     {isLocating ? (
                         <span className="flex items-center"><span className="animate-spin mr-2">⏳</span> Acquiring GPS...</span>
@@ -213,7 +208,7 @@ const RegisterShop: React.FC = () => {
                  </button>
               </div>
 
-              <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+              <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-800">
                   <Input
                     label="Total Slots"
                     placeholder="e.g. 50"
@@ -221,7 +216,7 @@ const RegisterShop: React.FC = () => {
                     onChange={handleInputChange(setSlots)}
                     icon={Hash}
                     type="number"
-                    className="bg-white mb-0"
+                    className="bg-slate-900 mb-0"
                   />
               </div>
           </div>
@@ -231,7 +226,7 @@ const RegisterShop: React.FC = () => {
             fullWidth 
             icon={ArrowRight}
             isLoading={isLoading}
-            className="shadow-lg shadow-primary-600/20 h-12 text-lg mt-4"
+            className="shadow-lg shadow-primary-500/20 h-12 text-lg mt-4"
           >
             Create Account
           </Button>
@@ -240,9 +235,9 @@ const RegisterShop: React.FC = () => {
         <div className="mt-6 text-center">
           <Link 
             to="/login"
-            className="text-sm text-gray-500 hover:text-gray-900 transition-colors"
+            className="text-sm text-slate-500 hover:text-white transition-colors"
           >
-            Already have an account? <span className="font-bold text-primary-600">Login</span>
+            Already have an account? <span className="font-bold text-primary-500">Login</span>
           </Link>
         </div>
       </div>

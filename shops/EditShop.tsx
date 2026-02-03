@@ -26,14 +26,13 @@ const EditShop: React.FC = () => {
   
   const [coordinates, setCoordinates] = useState<Coordinates>({ lat: 0, lng: 0 });
 
-  // Load initial data including the new storage fields
   useEffect(() => {
     if (shopDetails) {
       setFormData({
         shopName: shopDetails.shopName || '',
         phone: shopDetails.phone || '',
         city: shopDetails.city || shopDetails.location?.city || '',
-        address: shopDetails.address || shopDetails.location?.street || '', // Prioritize 'address'
+        address: shopDetails.address || shopDetails.location?.street || '',
         slots: shopDetails.slots ? shopDetails.slots.toString() : ''
       });
       if (shopDetails.coordinates) {
@@ -42,7 +41,6 @@ const EditShop: React.FC = () => {
     }
   }, [shopDetails]);
 
-  // Toast Timer
   useEffect(() => {
     if (toast) {
       const timer = setTimeout(() => setToast(null), 3000);
@@ -83,7 +81,6 @@ const EditShop: React.FC = () => {
     e.preventDefault();
     if (!currentUser) return;
     
-    // Validation
     if (!formData.shopName.trim() || !formData.address.trim()) {
       setToast({ type: 'error', message: 'Shop Name and Address are required.' });
       return;
@@ -94,7 +91,6 @@ const EditShop: React.FC = () => {
     try {
       const shopRef = doc(db, 'shops', currentUser.uid);
       
-      // Update specific fields as requested
       await updateDoc(shopRef, {
         shopName: formData.shopName.trim(),
         phone: formData.phone.trim(),
@@ -102,7 +98,6 @@ const EditShop: React.FC = () => {
         address: formData.address.trim(),
         slots: parseInt(formData.slots) || 0,
         coordinates: coordinates,
-        // Maintain legacy
         location: {
             city: formData.city.trim(),
             street: formData.address.trim(),
@@ -113,7 +108,6 @@ const EditShop: React.FC = () => {
       await refreshShopDetails();
       setToast({ type: 'success', message: 'Shop details updated!' });
       
-      // Navigate back after short delay
       setTimeout(() => navigate('/profile'), 1000);
     } catch (error) {
       console.error("Update error:", error);
@@ -124,7 +118,7 @@ const EditShop: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-safe">
+    <div className="min-h-screen bg-slate-950 pb-safe text-slate-200">
       
       {/* Toast */}
       {toast && (
@@ -137,14 +131,14 @@ const EditShop: React.FC = () => {
       )}
 
       {/* Header */}
-      <div className="sticky top-0 bg-white/95 backdrop-blur-sm z-10 px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+      <div className="sticky top-0 bg-slate-950/95 backdrop-blur-sm z-10 px-6 py-4 border-b border-slate-800 flex items-center justify-between">
         <button 
           onClick={() => navigate(-1)} 
-          className="p-3 -ml-3 rounded-full hover:bg-gray-100 text-gray-600 transition-colors"
+          className="p-3 -ml-3 rounded-full hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
         >
           <ArrowLeft size={24} />
         </button>
-        <h1 className="text-lg font-bold text-gray-900">Edit Shop</h1>
+        <h1 className="text-lg font-bold text-white">Edit Shop</h1>
         <div className="w-10"></div>
       </div>
 
@@ -152,8 +146,8 @@ const EditShop: React.FC = () => {
         <form onSubmit={handleSave} className="space-y-8">
           
           {/* Section 1: Basic Info */}
-          <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm animate-in slide-in-from-bottom-2">
-            <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 border-b border-gray-50 pb-2">
+          <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-sm animate-in slide-in-from-bottom-2">
+            <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4 border-b border-slate-800 pb-2">
               General Info
             </h3>
             
@@ -187,14 +181,14 @@ const EditShop: React.FC = () => {
           </div>
 
           {/* Section 2: Location */}
-          <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm animate-in slide-in-from-bottom-4">
-            <div className="flex items-center justify-between mb-4 border-b border-gray-50 pb-2">
-                 <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider flex items-center">
+          <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-sm animate-in slide-in-from-bottom-4">
+            <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-2">
+                 <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider flex items-center">
                     <MapPin size={16} className="mr-2" />
                     Location
                  </h3>
                  {coordinates.lat !== 0 && (
-                    <div className="flex items-center space-x-1 text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold">
+                    <div className="flex items-center space-x-1 text-[10px] bg-green-500/10 text-green-400 px-2 py-0.5 rounded-full font-bold border border-green-500/20">
                         <Crosshair size={10} />
                         <span>Lat: {coordinates.lat.toFixed(4)}</span>
                     </div>
@@ -222,7 +216,7 @@ const EditShop: React.FC = () => {
                 type="button"
                 onClick={handleGetLocation}
                 disabled={isLocating}
-                className="w-full mt-2 flex items-center justify-center py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-100 transition-colors"
+                className="w-full mt-2 flex items-center justify-center py-3 bg-slate-800 border border-slate-700 rounded-xl text-sm font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
             >
                 {isLocating ? 'Getting Location...' : (
                     <><Navigation size={16} className="mr-2" /> Update GPS Coordinates</>
@@ -235,7 +229,7 @@ const EditShop: React.FC = () => {
             fullWidth 
             isLoading={loading}
             icon={Save}
-            className="h-14 text-lg shadow-xl shadow-primary-600/20"
+            className="h-14 text-lg shadow-xl shadow-primary-500/20"
           >
             Save Changes
           </Button>

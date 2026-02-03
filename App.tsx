@@ -4,6 +4,7 @@ import Dashboard from './pages/Dashboard';
 import AddDevice from './pages/AddDevice';
 import DeviceDetails from './pages/DeviceDetails';
 import History from './pages/History';
+import Customers from './pages/Customers';
 import Login from './pages/Login';
 import RegisterShop from './shops/RegisterShop'; // Import from shops
 import EditShop from './shops/EditShop'; // Import from shops
@@ -18,7 +19,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-slate-950">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
       </div>
     );
@@ -89,6 +90,15 @@ const App: React.FC = () => {
           element={
             <ProtectedRoute>
               <History />
+            </ProtectedRoute>
+          } 
+        />
+
+        <Route 
+          path="/customers" 
+          element={
+            <ProtectedRoute>
+              <Customers />
             </ProtectedRoute>
           } 
         />

@@ -35,24 +35,24 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center p-6">
+    <div className="min-h-screen bg-slate-950 flex flex-col justify-center items-center p-6">
       
       <div className="text-center mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-        <div className="w-20 h-20 bg-primary-600 rounded-3xl rotate-3 flex items-center justify-center mx-auto mb-6 shadow-xl shadow-primary-600/30">
+        <div className="w-20 h-20 bg-primary-600 rounded-3xl rotate-3 flex items-center justify-center mx-auto mb-6 shadow-xl shadow-primary-500/20">
           <ShieldCheck size={40} className="text-white -rotate-3" />
         </div>
-        <h1 className="text-3xl font-black text-gray-900 tracking-tight">ChargeSafe</h1>
-        <p className="text-gray-500 mt-2 text-sm font-medium">Manage your charging shop.</p>
+        <h1 className="text-3xl font-black text-white tracking-tight">ChargeSafe</h1>
+        <p className="text-slate-400 mt-2 text-sm font-medium">Manage your charging shop.</p>
       </div>
 
-      <div className="w-full max-w-md bg-white rounded-3xl shadow-xl shadow-gray-200/50 p-8 animate-in fade-in zoom-in duration-500">
+      <div className="w-full max-w-md bg-slate-900 rounded-3xl shadow-2xl shadow-black p-8 animate-in fade-in zoom-in duration-500 border border-slate-800">
         <div className="mb-6">
-          <h2 className="text-xl font-bold text-gray-900">Welcome Back</h2>
-          <p className="text-gray-400 text-sm">Login to your dashboard</p>
+          <h2 className="text-xl font-bold text-white">Welcome Back</h2>
+          <p className="text-slate-500 text-sm">Login to your dashboard</p>
         </div>
 
         {error && (
-          <div className="bg-red-50 text-red-600 text-sm p-3 rounded-xl mb-6 border border-red-100 flex items-start">
+          <div className="bg-red-500/10 text-red-400 text-sm p-3 rounded-xl mb-6 border border-red-500/20 flex items-start">
             <span className="mr-2">⚠️</span>
             <span>{error}</span>
           </div>
@@ -87,17 +87,17 @@ const Login: React.FC = () => {
               fullWidth 
               icon={LogIn}
               isLoading={isLoading}
-              className="shadow-lg shadow-primary-600/20 h-12 text-lg"
+              className="shadow-lg shadow-primary-900/50 h-12 text-lg"
             >
               Login
             </Button>
           </div>
         </form>
 
-        <div className="mt-8 text-center border-t border-gray-100 pt-6">
+        <div className="mt-8 text-center border-t border-slate-800 pt-6">
           <button 
             onClick={() => navigate('/register-shop')}
-            className="text-sm text-primary-600 font-bold hover:text-primary-800 transition-colors"
+            className="text-sm text-primary-400 font-bold hover:text-primary-300 transition-colors"
           >
             Don't have an account? Setup Shop
           </button>

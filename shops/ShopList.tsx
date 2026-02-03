@@ -43,17 +43,17 @@ const ShopList: React.FC = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-safe">
+    <div className="min-h-screen bg-slate-950 pb-safe">
       {/* Header */}
-      <div className="sticky top-0 bg-white/95 backdrop-blur-sm z-10 px-6 py-4 border-b border-gray-100 shadow-sm">
+      <div className="sticky top-0 bg-slate-950/95 backdrop-blur-sm z-10 px-6 py-4 border-b border-slate-800 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <button 
             onClick={() => navigate('/')} 
-            className="p-3 -ml-3 rounded-full hover:bg-gray-100 text-gray-600 transition-colors"
+            className="p-3 -ml-3 rounded-full hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
           >
             <ArrowLeft size={24} />
           </button>
-          <h1 className="text-lg font-bold text-gray-900">Registered Shops</h1>
+          <h1 className="text-lg font-bold text-white">Registered Shops</h1>
           <div className="w-10"></div>
         </div>
 
@@ -70,13 +70,13 @@ const ShopList: React.FC = () => {
       <div className="p-6">
         {loading ? (
           <div className="flex justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
           </div>
         ) : (
           <div className="space-y-4">
             {filteredShops.length === 0 ? (
-              <div className="text-center py-12 text-gray-400">
-                <Store size={48} className="mx-auto mb-4 opacity-30" />
+              <div className="text-center py-12 text-slate-500">
+                <Store size={48} className="mx-auto mb-4 opacity-20" />
                 <p>No shops found</p>
               </div>
             ) : (
@@ -87,30 +87,30 @@ const ShopList: React.FC = () => {
                 return (
                   <div 
                     key={index} 
-                    className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-start space-x-4 hover:bg-gray-50 transition-colors"
+                    className="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-sm flex items-start space-x-4 hover:border-slate-700 transition-colors"
                   >
-                    <div className="w-12 h-12 bg-primary-50 rounded-full flex items-center justify-center text-primary-600 flex-shrink-0">
+                    <div className="w-12 h-12 bg-slate-800 rounded-full flex items-center justify-center text-primary-500 flex-shrink-0">
                       <Store size={20} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-start">
-                          <h3 className="font-bold text-gray-900 text-lg truncate pr-2">{shop.shopName}</h3>
+                          <h3 className="font-bold text-white text-lg truncate pr-2">{shop.shopName}</h3>
                           {shop.slots ? (
-                              <span className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-lg font-bold flex items-center flex-shrink-0">
+                              <span className="bg-slate-800 text-slate-400 text-xs px-2 py-1 rounded-lg font-bold flex items-center flex-shrink-0 border border-slate-700">
                                 <Hash size={10} className="mr-1" /> {shop.slots}
                               </span>
                           ) : null}
                       </div>
                       
-                      <div className="flex items-start text-sm text-gray-500 mt-1">
-                        <MapPin size={14} className="mr-1.5 flex-shrink-0 mt-0.5" />
+                      <div className="flex items-start text-sm text-slate-400 mt-1">
+                        <MapPin size={14} className="mr-1.5 flex-shrink-0 mt-0.5 text-slate-500" />
                         <span className="line-clamp-2 leading-snug">
                           {displayAddress}, {displayCity}
                         </span>
                       </div>
                       
                       {shop.phone && (
-                        <div className="flex items-center text-sm text-gray-500 mt-1.5">
+                        <div className="flex items-center text-sm text-slate-500 mt-1.5">
                           <Phone size={14} className="mr-1.5 flex-shrink-0" />
                           <span>{shop.phone}</span>
                         </div>

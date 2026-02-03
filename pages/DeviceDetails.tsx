@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -17,7 +17,9 @@ import {
   X,
   QrCode,
   ShieldCheck,
-  ShieldAlert
+  ShieldAlert,
+  Timer,
+  Tag
 } from 'lucide-react';
 import { doc, getDoc, updateDoc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -44,6 +46,10 @@ const DeviceDetails: React.FC = () => {
   const [isScanning, setIsScanning] = useState(false);
   const [scanError, setScanError] = useState('');
   const scannerRef = useRef<any>(null);
+  
+  // Timer State for Auto-Billing
+  const [currentFee, setCurrentFee] = useState<number>(0);
+  const [elapsedString, setElapsedString] = useState('');
 
   useEffect(() => {
     const fetchDevice = async () => {
@@ -68,6 +74,48 @@ const DeviceDetails: React.FC = () => {
 
     fetchDevice();
   }, [id, currentUser, device]);
+
+  // --- AUTO BILLING LOGIC ---
+  useEffect(() => {
+      if (!device) return;
+
+      const calculate = () => {
+          if (device.status === 'collected') {
+              // Fee is fixed once collected
+              setCurrentFee(device.fee);
+              if(device.endTime) {
+                  const diff = new Date(device.endTime).getTime() - new Date(device.startTime).getTime();
+                  const hours = Math.floor(diff / (1000 * 60 * 60));
+                  const mins = Math.round((diff % (1000 * 60 * 60)) / (1000 * 60));
+                  setElapsedString(`${hours}h ${mins}m`);
+              }
+              return;
+          }
+
+          // Dynamic calculation
+          const now = new Date();
+          const start = new Date(device.startTime);
+          const diffMs = now.getTime() - start.getTime();
+          
+          // Format String
+          const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
+          const diffMins = Math.round((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+          setElapsedString(`${diffHrs}h ${diffMins}m`);
+
+          if (device.billingType === 'hourly' && device.hourlyRate) {
+              const hoursDecimal = Math.max(diffMs / (1000 * 60 * 60), 0.5); // Minimum 30 mins charge
+              // Simple Round Up Logic or Exact
+              const fee = Math.ceil(hoursDecimal * device.hourlyRate); 
+              setCurrentFee(fee);
+          } else {
+              setCurrentFee(device.fee);
+          }
+      };
+
+      calculate();
+      const interval = setInterval(calculate, 60000); // Update every minute
+      return () => clearInterval(interval);
+  }, [device]);
 
   useEffect(() => {
     if (toast) {
@@ -106,6 +154,7 @@ const DeviceDetails: React.FC = () => {
 
   const markReady = async () => {
     try {
+      // If hourly, we might snapshot the fee here, but usually fee is finalized at collection
       await updateStatus('ready');
       setToast({ type: 'success', message: 'Device marked as Ready' });
     } catch (e) {
@@ -117,8 +166,17 @@ const DeviceDetails: React.FC = () => {
     if (!currentUser) return;
 
     try {
-        // 1. Update Device Status in Shop Collection
-        await updateStatus('collected', { endTime: new Date().toISOString() });
+        // 1. Update Device Status with FINAL FEE if hourly
+        const finalData: Partial<DeviceEntry> = { 
+            endTime: new Date().toISOString(),
+            status: 'collected'
+        };
+        
+        if (device?.billingType === 'hourly') {
+            finalData.fee = currentFee;
+        }
+
+        await updateStatus('collected', finalData);
 
         // 2. Clear Slot in 'slots' collection if QR ID exists
         if (device?.qrId) {
@@ -145,7 +203,7 @@ const DeviceDetails: React.FC = () => {
   const handleShare = async () => {
     if (!device) return;
     
-    const text = `ChargeSafe Receipt\nOrder: ${device.id}\nCustomer: ${device.customerName}\nDevice: ${device.description}\nFee: ₦${device.fee.toLocaleString()}\nStatus: ${device.status.toUpperCase()}`;
+    const text = `ChargeSafe Receipt\nOrder: ${device.id}\nCustomer: ${device.customerName}\nDevice: ${device.description}\nFee: ₦${currentFee.toLocaleString()}\nStatus: ${device.status.toUpperCase()}`;
 
     if (navigator.share) {
       try {
@@ -238,13 +296,13 @@ const DeviceDetails: React.FC = () => {
     }
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600"></div></div>;
-  if (error || !device) return <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-6 text-center"><AlertCircle className="text-red-500 mb-4" size={48} /><h2 className="text-lg font-bold">{error || 'Device Not Found'}</h2><Button className="mt-4" onClick={() => navigate('/')}>Back to Dashboard</Button></div>;
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-slate-950"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-500"></div></div>;
+  if (error || !device) return <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 p-6 text-center"><AlertCircle className="text-red-500 mb-4" size={48} /><h2 className="text-lg font-bold text-white">{error || 'Device Not Found'}</h2><Button className="mt-4" onClick={() => navigate('/')}>Back to Dashboard</Button></div>;
 
   const DeviceIcon = getIcon(device.type);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex justify-center pb-6">
+    <div className="min-h-screen bg-slate-950 flex justify-center pb-6">
       
       {/* FULL SCREEN SCANNER OVERLAY */}
       {isScanning && (
@@ -281,7 +339,7 @@ const DeviceDetails: React.FC = () => {
           </div>
       )}
 
-      <div className="w-full max-w-lg bg-white md:my-8 md:rounded-3xl md:shadow-lg min-h-screen md:min-h-fit flex flex-col">
+      <div className="w-full max-w-lg bg-slate-950 md:my-8 md:rounded-3xl md:shadow-lg min-h-screen md:min-h-fit flex flex-col">
         
         {/* TOAST NOTIFICATION */}
         {toast && (
@@ -294,17 +352,17 @@ const DeviceDetails: React.FC = () => {
         )}
 
         {/* HEADER */}
-        <div className="sticky top-0 bg-white/95 backdrop-blur-sm z-10 px-6 py-4 border-b border-gray-100 flex items-center justify-between md:rounded-t-3xl">
+        <div className="sticky top-0 bg-slate-950/95 backdrop-blur-sm z-10 px-6 py-4 border-b border-slate-800 flex items-center justify-between md:rounded-t-3xl">
           <button 
             onClick={() => navigate('/')} 
-            className="p-3 -ml-3 rounded-full hover:bg-gray-100 text-gray-600 transition-colors"
+            className="p-3 -ml-3 rounded-full hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
           >
             <ArrowLeft size={24} />
           </button>
-          <h1 className="text-lg font-bold text-gray-900">Device Details</h1>
+          <h1 className="text-lg font-bold text-white">Device Details</h1>
           <button 
             onClick={handleShare}
-            className="p-3 -mr-3 text-gray-400 hover:text-primary-600 rounded-full hover:bg-gray-50 transition-colors"
+            className="p-3 -mr-3 text-slate-400 hover:text-primary-400 rounded-full hover:bg-slate-800 transition-colors"
           >
             <Share2 size={20} />
           </button>
@@ -313,10 +371,10 @@ const DeviceDetails: React.FC = () => {
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           
           {/* 1. STATUS & ID CARD */}
-          <div className="bg-white border border-gray-200 rounded-3xl shadow-sm p-8 text-center relative overflow-hidden">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl shadow-sm p-8 text-center relative overflow-hidden">
             <div className={`absolute top-0 left-0 right-0 h-2 ${
               device.status === 'charging' ? 'bg-blue-500' : 
-              device.status === 'ready' ? 'bg-green-500' : 'bg-gray-400'
+              device.status === 'ready' ? 'bg-green-500' : 'bg-slate-700'
             }`} />
             
             <Badge 
@@ -326,17 +384,22 @@ const DeviceDetails: React.FC = () => {
               {device.status}
             </Badge>
 
-            <h2 className="text-4xl font-black text-gray-900 mb-1 tracking-tight">{device.id}</h2>
-            <div className="flex items-center justify-center space-x-2 mb-6">
-               <p className="text-gray-400 text-xs font-bold tracking-widest uppercase">Order Number</p>
+            <h2 className="text-4xl font-black text-white mb-1 tracking-tight">{device.id}</h2>
+            <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
+               <p className="text-slate-500 text-xs font-bold tracking-widest uppercase">Order Number</p>
                {device.qrId && (
-                   <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px] font-bold font-mono border border-gray-200">
-                       {device.qrId}
+                   <span className="bg-yellow-500/10 text-yellow-500 px-2 py-0.5 rounded text-[10px] font-bold font-mono border border-yellow-500/20">
+                       Slot {device.qrId}
+                   </span>
+               )}
+               {device.tagNumber && (
+                   <span className="bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded text-[10px] font-bold font-mono border border-blue-500/20">
+                       Tag #{device.tagNumber}
                    </span>
                )}
             </div>
 
-            {/* NEW: Device Image Thumbnail if exists */}
+            {/* Device Image Thumbnail */}
             {device.deviceImage && (
               <div 
                 className="mb-6 relative group cursor-pointer inline-block"
@@ -345,44 +408,44 @@ const DeviceDetails: React.FC = () => {
                 <img 
                   src={device.deviceImage} 
                   alt="Device Condition" 
-                  className="w-full max-w-[200px] h-32 object-cover rounded-xl border border-gray-200 shadow-sm" 
+                  className="w-full max-w-[200px] h-32 object-cover rounded-xl border border-slate-700 shadow-sm" 
                 />
-                <div className="absolute inset-0 bg-black/20 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="absolute inset-0 bg-black/40 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                   <Maximize2 className="text-white" size={24} />
                 </div>
               </div>
             )}
 
-            <div className="flex items-center justify-center space-x-2 text-sm text-gray-500 bg-gray-50 py-2 px-4 rounded-full inline-flex">
+            <div className="flex items-center justify-center space-x-2 text-sm text-slate-400 bg-slate-800 py-2 px-4 rounded-full inline-flex">
               <Clock size={16} />
-              <span className="font-medium">Started: {new Date(device.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+              <span className="font-medium">{new Date(device.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {elapsedString} elapsed</span>
             </div>
           </div>
 
           {/* 2. INFO DETAILS */}
-          <div className="bg-gray-50 rounded-3xl p-6 border border-gray-100 space-y-5">
+          <div className="bg-slate-900 rounded-3xl p-6 border border-slate-800 space-y-5">
             <div className="flex items-center">
-              <div className="bg-white p-3 rounded-2xl text-primary-600 shadow-sm mr-4 border border-gray-100">
+              <div className="bg-slate-800 p-3 rounded-2xl text-primary-400 shadow-sm mr-4 border border-slate-700">
                 <DeviceIcon size={24} />
               </div>
               <div className="flex-1">
-                <p className="text-xs text-gray-400 font-bold uppercase mb-0.5">Device</p>
-                <p className="font-bold text-gray-900 text-lg">{device.description}</p>
-                <p className="text-sm text-gray-500 font-medium">{device.type}</p>
+                <p className="text-xs text-slate-500 font-bold uppercase mb-0.5">Device</p>
+                <p className="font-bold text-white text-lg">{device.description}</p>
+                <p className="text-sm text-slate-400 font-medium">{device.type}</p>
               </div>
             </div>
             
-            <div className="w-full h-px bg-gray-200" />
+            <div className="w-full h-px bg-slate-800" />
 
             <div className="flex items-center">
-              <div className="bg-white p-3 rounded-2xl text-primary-600 shadow-sm mr-4 border border-gray-100">
+              <div className="bg-slate-800 p-3 rounded-2xl text-primary-400 shadow-sm mr-4 border border-slate-700">
                 <User size={24} />
               </div>
               <div className="flex-1">
-                <p className="text-xs text-gray-400 font-bold uppercase mb-0.5">Customer</p>
-                <p className="font-bold text-gray-900 text-lg">{device.customerName}</p>
+                <p className="text-xs text-slate-500 font-bold uppercase mb-0.5">Customer</p>
+                <p className="font-bold text-white text-lg">{device.customerName}</p>
                 {device.customerPhone && (
-                  <a href={`tel:${device.customerPhone}`} className="text-primary-600 text-sm font-bold flex items-center mt-1 hover:underline">
+                  <a href={`tel:${device.customerPhone}`} className="text-primary-400 text-sm font-bold flex items-center mt-1 hover:underline">
                     <Phone size={14} className="mr-1" />
                     {device.customerPhone}
                   </a>
@@ -390,21 +453,24 @@ const DeviceDetails: React.FC = () => {
               </div>
             </div>
 
-            {device.fee > 0 && (
-              <>
-                <div className="w-full h-px bg-gray-200" />
-                <div className="flex items-center justify-between pt-1">
-                  <span className="text-gray-500 font-medium">To Pay</span>
-                  <span className="text-2xl font-black text-gray-900">₦{device.fee.toLocaleString()}</span>
+            <div className="w-full h-px bg-slate-800" />
+            <div className="flex items-center justify-between pt-1">
+                <div>
+                   <span className="text-slate-400 font-medium block">Current Fee</span>
+                   {device.billingType === 'hourly' && (
+                       <span className="text-xs text-primary-300 bg-primary-900/40 px-2 py-0.5 rounded-full font-bold">
+                           @ ₦{device.hourlyRate}/hr
+                       </span>
+                   )}
                 </div>
-              </>
-            )}
+                <span className="text-2xl font-black text-white">₦{currentFee.toLocaleString()}</span>
+            </div>
           </div>
 
           {/* 3. VERIFICATION SECTION */}
           {device.status !== 'collected' && (
-            <div className={`border rounded-3xl p-6 ${device.qrId ? 'bg-yellow-50/60 border-yellow-200 shadow-sm' : 'bg-blue-50/60 border-blue-100'}`}>
-              <div className={`flex items-center mb-4 ${device.qrId ? 'text-yellow-900' : 'text-blue-800'}`}>
+            <div className={`border rounded-3xl p-6 ${device.qrId ? 'bg-yellow-500/10 border-yellow-500/20' : 'bg-blue-500/10 border-blue-500/20'}`}>
+              <div className={`flex items-center mb-4 ${device.qrId ? 'text-yellow-400' : 'text-blue-400'}`}>
                 {device.qrId ? <ShieldCheck size={22} className="mr-2" /> : <Scan size={22} className="mr-2" />}
                 <h3 className="font-bold text-lg">
                     {device.qrId ? 'Security Check' : 'Pickup Verification'}
@@ -414,29 +480,29 @@ const DeviceDetails: React.FC = () => {
               {device.qrId ? (
                   // Secure Flow: Must Scan Slot
                   <div className="text-center">
-                      <p className="text-sm text-gray-700 font-medium mb-4">
+                      <p className="text-sm text-slate-300 font-medium mb-4">
                           Device locked to slot <strong>{device.qrId}</strong>.
                       </p>
                       <Button 
                         fullWidth 
                         onClick={startScanner}
                         icon={Scan}
-                        className="shadow-md shadow-yellow-500/20 bg-yellow-600 hover:bg-yellow-700 text-white border-transparent py-4 text-base"
+                        className="shadow-md shadow-yellow-900/20 bg-yellow-600 hover:bg-yellow-500 text-white border-transparent py-4 text-base"
                       >
                         Scan Slot to Release
                       </Button>
-                      <p className="text-xs text-gray-400 mt-3 flex items-center justify-center">
+                      <p className="text-xs text-slate-500 mt-3 flex items-center justify-center">
                           <ShieldCheck size={12} className="mr-1" /> Manual checkout disabled
                       </p>
                   </div>
               ) : (
-                  // Manual Flow (Legacy/Walk-in without QR)
-                  <div className="text-center p-4 bg-white rounded-xl border border-blue-100">
-                     <p className="text-gray-500 text-sm mb-4">No security slot assigned. Please verify customer identity manually.</p>
+                  // Manual Flow
+                  <div className="text-center p-4 bg-slate-900 rounded-xl border border-blue-500/30">
+                     <p className="text-slate-400 text-sm mb-4">No security slot assigned. Please verify customer identity manually.</p>
                      <Button 
                         fullWidth 
                         onClick={() => setIsCollectModalOpen(true)}
-                        className="bg-blue-600 hover:bg-blue-700"
+                        className="bg-blue-600 hover:bg-blue-500"
                      >
                         Confirm Collection
                      </Button>
@@ -447,28 +513,28 @@ const DeviceDetails: React.FC = () => {
         </div>
 
         {/* STICKY BOTTOM ACTIONS */}
-        <div className="p-6 bg-white border-t border-gray-100 md:rounded-b-3xl">
+        <div className="p-6 bg-slate-950 border-t border-slate-800 md:rounded-b-3xl">
           <div className="grid grid-cols-1 gap-3">
             {device.status === 'charging' && (
-              <Button fullWidth onClick={markReady} className="bg-gray-900 hover:bg-gray-800 h-14 text-lg">
+              <Button fullWidth onClick={markReady} className="bg-slate-800 hover:bg-slate-700 border border-slate-700 h-14 text-lg">
                 Mark Ready for Pickup
               </Button>
             )}
             
             {device.status === 'ready' && (
                device.qrId ? (
-                  <Button fullWidth onClick={startScanner} variant="primary" icon={Scan} className="bg-yellow-600 hover:bg-yellow-700 h-14 text-lg">
+                  <Button fullWidth onClick={startScanner} variant="primary" icon={Scan} className="bg-yellow-600 hover:bg-yellow-500 h-14 text-lg">
                     Scan {device.qrId} to Checkout
                   </Button>
                ) : (
-                  <Button fullWidth onClick={() => setIsCollectModalOpen(true)} variant="primary" className="bg-green-600 hover:bg-green-700 h-14 text-lg">
+                  <Button fullWidth onClick={() => setIsCollectModalOpen(true)} variant="primary" className="bg-green-600 hover:bg-green-500 h-14 text-lg">
                     Confirm Collection
                   </Button>
                )
             )}
 
             {device.status === 'collected' && (
-              <div className="text-center py-2 flex items-center justify-center text-green-600 font-bold bg-green-50 rounded-2xl h-14">
+              <div className="text-center py-2 flex items-center justify-center text-green-400 font-bold bg-green-500/10 border border-green-500/20 rounded-2xl h-14">
                 <CheckCircle size={22} className="mr-2" />
                 Device Collected
               </div>
@@ -483,26 +549,28 @@ const DeviceDetails: React.FC = () => {
           title="Confirm Collection"
         >
           <div className="text-center">
-            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
-              <CheckCircle className="h-6 w-6 text-green-600" />
+            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-500/20 mb-4">
+              <CheckCircle className="h-6 w-6 text-green-400" />
             </div>
             <div className="mt-2">
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-slate-400">
                 Are you sure you want to mark <strong>{device.id}</strong> as collected?
               </p>
-              {device.fee > 0 && (
-                <div className="mt-4 p-3 bg-gray-50 rounded-xl">
-                   <p className="text-xs text-gray-500 uppercase font-bold">Collect Payment</p>
-                   <p className="text-2xl font-black text-gray-900">₦{device.fee.toLocaleString()}</p>
-                </div>
-              )}
+              
+              <div className="mt-4 p-3 bg-slate-800 rounded-xl border border-slate-700">
+                  <p className="text-xs text-slate-500 uppercase font-bold">Total to Collect</p>
+                  <p className="text-2xl font-black text-white">₦{currentFee.toLocaleString()}</p>
+                  {device.billingType === 'hourly' && (
+                      <p className="text-xs text-blue-400 mt-1 font-medium">({elapsedString} duration)</p>
+                  )}
+              </div>
             </div>
           </div>
           <div className="mt-6 flex space-x-3">
              <Button fullWidth variant="outline" onClick={() => setIsCollectModalOpen(false)}>
                Cancel
              </Button>
-             <Button fullWidth variant="primary" className="bg-green-600 hover:bg-green-700" onClick={confirmCollected}>
+             <Button fullWidth variant="primary" className="bg-green-600 hover:bg-green-500" onClick={confirmCollected}>
                Yes, Collected
              </Button>
           </div>
@@ -510,7 +578,7 @@ const DeviceDetails: React.FC = () => {
         
         {/* IMAGE PREVIEW MODAL */}
         {showImageModal && device.deviceImage && (
-          <div className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4" onClick={() => setShowImageModal(false)}>
+          <div className="fixed inset-0 z-[60] bg-black/95 flex items-center justify-center p-4" onClick={() => setShowImageModal(false)}>
              <img src={device.deviceImage} className="max-w-full max-h-full rounded-lg" alt="Full Preview" />
              <button className="absolute top-4 right-4 text-white p-2">
                <span className="sr-only">Close</span>

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, onAuthStateChanged, signOut } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { ShopProfile } from '../types';
 
@@ -27,57 +27,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [shopDetails, setShopDetails] = useState<ShopProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchShopDetails = async (uid: string) => {
-    try {
-      const docRef = doc(db, 'shops', uid);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        // Explicitly map all fields required by the app
-        setShopDetails({ 
-          uid: uid,
-          ownerId: data.ownerId,
-          shopName: data.shopName, 
-          email: data.email,
-          phone: data.phone,
-          
-          // New Data Fields
-          address: data.address,
-          city: data.city,
-          slots: data.slots,
-          coordinates: data.coordinates, // { lat, lng }
-
-          // Legacy / Fallback
-          location: data.location || { city: '', street: '', landmark: '' },
-        });
-      }
-    } catch (error) {
-      console.error("Error fetching shop details:", error);
-    }
-  };
-
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    let unsubscribeShop: () => void;
+
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
+      setLoading(true);
+
       if (user) {
-        await fetchShopDetails(user.uid);
+        // Real-time listener for Shop Details
+        unsubscribeShop = onSnapshot(doc(db, 'shops', user.uid), (docSnap) => {
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            setShopDetails({ 
+              uid: user.uid,
+              ownerId: data.ownerId,
+              shopName: data.shopName, 
+              email: data.email,
+              phone: data.phone,
+              address: data.address,
+              city: data.city,
+              slots: data.slots,
+              coordinates: data.coordinates,
+              location: data.location || { city: '', street: '', landmark: '' },
+            });
+          }
+          setLoading(false);
+        }, (error) => {
+          console.error("Error fetching shop details:", error);
+          setLoading(false);
+        });
       } else {
         setShopDetails(null);
+        if (unsubscribeShop) unsubscribeShop();
+        setLoading(false);
       }
-      setLoading(false);
     });
 
-    return unsubscribe;
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeShop) unsubscribeShop();
+    };
   }, []);
 
   const logout = async () => {
     await signOut(auth);
   };
 
+  // Deprecated but kept for compatibility, listener handles updates automatically now
   const refreshShopDetails = async () => {
-    if (currentUser) {
-      await fetchShopDetails(currentUser.uid);
-    }
+    // No-op for real-time listener
   }
 
   const value = {
