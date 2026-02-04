@@ -26,6 +26,8 @@
               sans: ['Inter', 'sans-serif'],
             },
             colors: {
+              white: 'var(--color-white)',
+              black: 'var(--color-black)',
               primary: {
                 50: '#f0f9ff',
                 100: '#e0f2fe',
@@ -36,8 +38,18 @@
                 900: '#0c4a6e',
               },
               slate: {
-                850: '#1e293b',
-                950: '#020617',
+                50: 'var(--slate-50)',
+                100: 'var(--slate-100)',
+                200: 'var(--slate-200)',
+                300: 'var(--slate-300)',
+                400: 'var(--slate-400)',
+                500: 'var(--slate-500)',
+                600: 'var(--slate-600)',
+                700: 'var(--slate-700)',
+                800: 'var(--slate-800)',
+                850: 'var(--slate-850)',
+                900: 'var(--slate-900)',
+                950: 'var(--slate-950)',
               }
             }
           }
@@ -45,8 +57,28 @@
       }
     </script>
     <style>
+      :root {
+        /* Default Dark Mode Palette (Hardcoded initially) */
+        --slate-50: #f8fafc;
+        --slate-100: #f1f5f9;
+        --slate-200: #e2e8f0;
+        --slate-300: #cbd5e1;
+        --slate-400: #94a3b8;
+        --slate-500: #64748b;
+        --slate-600: #475569;
+        --slate-700: #334155;
+        --slate-800: #1e293b;
+        --slate-850: #172033;
+        --slate-900: #0f172a;
+        --slate-950: #020617;
+        --color-white: #ffffff;
+        --color-black: #000000;
+      }
+
       body {
         -webkit-tap-highlight-color: transparent;
+        background-color: var(--slate-950);
+        color: var(--slate-50);
       }
       .hide-scrollbar::-webkit-scrollbar {
         display: none;

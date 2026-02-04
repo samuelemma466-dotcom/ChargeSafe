@@ -13,13 +13,11 @@ import {
   ShieldCheck,
   Hash,
   X,
-  Bell,
-  Printer,
-  Volume2,
   Users,
   ChevronRight,
   HelpCircle,
-  Zap
+  Zap,
+  Settings as SettingsIcon
 } from 'lucide-react';
 import { doc, updateDoc, collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -37,13 +35,6 @@ const Profile: React.FC = () => {
   // Real-time Stats
   const [activeCount, setActiveCount] = useState(0);
   const [staffCount, setStaffCount] = useState(1); // Default to owner
-
-  // Local Settings State (Mock for UI)
-  const [settings, setSettings] = useState({
-    sound: true,
-    autoPrint: false,
-    alerts: true
-  });
 
   // Form State
   const [formData, setFormData] = useState({
@@ -137,11 +128,6 @@ const Profile: React.FC = () => {
       await logout();
       navigate('/login');
     }
-  };
-
-  const toggleSetting = (key: keyof typeof settings) => {
-      setSettings(prev => ({ ...prev, [key]: !prev[key] }));
-      if (navigator.vibrate) navigator.vibrate(50);
   };
 
   return (
@@ -259,51 +245,22 @@ const Profile: React.FC = () => {
                      <ChevronRight size={18} className="text-slate-600" />
                  </button>
 
-                 {/* Toggles Container */}
-                 <div className="bg-slate-900 rounded-3xl border border-slate-800 overflow-hidden">
-                     
-                     {/* Sound */}
-                     <div className="p-4 flex items-center justify-between border-b border-slate-800">
-                         <div className="flex items-center">
-                             <Volume2 size={20} className="text-slate-400 mr-3" />
-                             <span className="text-sm font-medium text-slate-200">Sound Effects</span>
+                 {/* Settings Link */}
+                 <button 
+                    onClick={() => navigate('/settings')}
+                    className="w-full bg-slate-900 hover:bg-slate-800 p-4 rounded-2xl border border-slate-800 flex items-center justify-between transition-colors group"
+                 >
+                     <div className="flex items-center">
+                         <div className="p-2 bg-slate-800 rounded-xl text-slate-400 mr-4 group-hover:bg-slate-700 transition-colors">
+                             <SettingsIcon size={20} />
                          </div>
-                         <button 
-                            onClick={() => toggleSetting('sound')}
-                            className={`w-12 h-7 rounded-full p-1 transition-all ${settings.sound ? 'bg-primary-600' : 'bg-slate-700'}`}
-                         >
-                             <div className={`w-5 h-5 bg-white rounded-full shadow-sm transform transition-transform ${settings.sound ? 'translate-x-5' : 'translate-x-0'}`} />
-                         </button>
-                     </div>
-
-                     {/* Auto Print */}
-                     <div className="p-4 flex items-center justify-between border-b border-slate-800">
-                         <div className="flex items-center">
-                             <Printer size={20} className="text-slate-400 mr-3" />
-                             <span className="text-sm font-medium text-slate-200">Auto-Print Receipts</span>
+                         <div className="text-left">
+                             <p className="text-white font-bold">App Settings</p>
+                             <p className="text-xs text-slate-500">Theme, Currency, Reset Data</p>
                          </div>
-                         <button 
-                            onClick={() => toggleSetting('autoPrint')}
-                            className={`w-12 h-7 rounded-full p-1 transition-all ${settings.autoPrint ? 'bg-primary-600' : 'bg-slate-700'}`}
-                         >
-                             <div className={`w-5 h-5 bg-white rounded-full shadow-sm transform transition-transform ${settings.autoPrint ? 'translate-x-5' : 'translate-x-0'}`} />
-                         </button>
                      </div>
-
-                     {/* Alerts */}
-                     <div className="p-4 flex items-center justify-between">
-                         <div className="flex items-center">
-                             <Bell size={20} className="text-slate-400 mr-3" />
-                             <span className="text-sm font-medium text-slate-200">Security Alerts</span>
-                         </div>
-                         <button 
-                            onClick={() => toggleSetting('alerts')}
-                            className={`w-12 h-7 rounded-full p-1 transition-all ${settings.alerts ? 'bg-primary-600' : 'bg-slate-700'}`}
-                         >
-                             <div className={`w-5 h-5 bg-white rounded-full shadow-sm transform transition-transform ${settings.alerts ? 'translate-x-5' : 'translate-x-0'}`} />
-                         </button>
-                     </div>
-                 </div>
+                     <ChevronRight size={18} className="text-slate-600" />
+                 </button>
 
                  {/* Support Link */}
                  <button className="w-full bg-slate-900 hover:bg-slate-800 p-4 rounded-2xl border border-slate-800 flex items-center justify-between transition-colors">
@@ -325,7 +282,7 @@ const Profile: React.FC = () => {
                 >
                   Sign Out
                 </Button>
-                <p className="text-center text-xs text-slate-600 mt-4 font-mono">ChargeSafe v1.2.0 • Build 8402</p>
+                <p className="text-center text-xs text-slate-600 mt-4 font-mono">ChargeSafe v1.3.0</p>
              </div>
           </div>
         ) : (

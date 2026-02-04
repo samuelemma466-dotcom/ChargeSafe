@@ -1,6 +1,7 @@
 import React from 'react';
 import { LucideIcon, X, LayoutGrid, History, Users, UserCircle } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useSettings } from '../contexts/SettingsContext';
 
 // --- BUTTON ---
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -17,8 +18,18 @@ export const Button: React.FC<ButtonProps> = ({
   className = '', 
   icon: Icon,
   isLoading,
+  onClick,
   ...props 
 }) => {
+  // Use Settings Context for Sound
+  let playSound: any = () => {};
+  try {
+     const settings = useSettings();
+     playSound = settings.playSound;
+  } catch(e) {
+      // Fallback if used outside provider (e.g. login before auth)
+  }
+
   const baseStyles = "inline-flex items-center justify-center px-6 py-4 border text-[15px] font-bold rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary-500/20 transition-all active:scale-[0.97] disabled:opacity-70 disabled:cursor-not-allowed disabled:active:scale-100 shadow-lg";
   
   const variants = {
@@ -31,10 +42,18 @@ export const Button: React.FC<ButtonProps> = ({
 
   const width = fullWidth ? "w-full" : "";
 
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (!props.disabled && !isLoading) {
+      playSound('click');
+    }
+    if (onClick) onClick(e);
+  };
+
   return (
     <button 
       className={`${baseStyles} ${variants[variant]} ${width} ${className}`} 
       disabled={isLoading || props.disabled}
+      onClick={handleClick}
       {...props}
     >
       {isLoading ? (
@@ -205,6 +224,13 @@ export const BottomNav: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Use Settings Context for Sound
+  let playSound: any = () => {};
+  try {
+     const settings = useSettings();
+     playSound = settings.playSound;
+  } catch(e) {}
+
   const navItems = [
     { id: '/', label: 'Home', icon: LayoutGrid },
     { id: '/history', label: 'History', icon: History },
@@ -213,13 +239,16 @@ export const BottomNav: React.FC = () => {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-slate-950/90 backdrop-blur-md border-t border-slate-800 px-6 py-2 flex justify-between items-center z-30 pb-safe">
+    <nav className="fixed bottom-0 left-0 right-0 bg-slate-950/90 backdrop-blur-md border-t border-slate-800 px-6 py-2 flex justify-between items-center z-30 pb-safe transition-colors">
       {navItems.map((item) => {
         const isActive = location.pathname === item.id;
         return (
           <button 
             key={item.id}
-            onClick={() => navigate(item.id)}
+            onClick={() => {
+                playSound('click');
+                navigate(item.id);
+            }}
             className={`flex flex-col items-center p-2 rounded-xl transition-all duration-300 ${
               isActive ? 'text-primary-500 scale-110' : 'text-slate-600 hover:text-slate-400'
             }`}

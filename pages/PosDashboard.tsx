@@ -111,24 +111,28 @@ const PosDashboard: React.FC = () => {
   };
 
   const checkCustomer = async (phone: string) => {
-      if (phone.length < 10 || !currentUser) return;
+      if (!phone || phone.trim().length < 10 || !currentUser) return;
       
-      const docRef = doc(db, 'shops', currentUser.uid, 'customers', phone);
-      const snap = await getDoc(docRef);
-      
-      if (snap.exists()) {
-          const data = snap.data() as CustomerProfile;
-          setCustomerName(data.name);
-          if (data.isBadActor) {
-              setCustomerTrust({ status: 'bad', reason: data.badActorReason || 'Previous Issue' });
-              setFlagAsRisk(true); // Auto-check flag if they are already bad
-          } else {
-              setCustomerTrust({ status: 'good' });
-              setFlagAsRisk(false);
-          }
-      } else {
-          setCustomerTrust({ status: 'unknown' });
-          setFlagAsRisk(false);
+      try {
+        const docRef = doc(db, 'shops', currentUser.uid, 'customers', phone.trim());
+        const snap = await getDoc(docRef);
+        
+        if (snap.exists()) {
+            const data = snap.data() as CustomerProfile;
+            setCustomerName(data.name);
+            if (data.isBadActor) {
+                setCustomerTrust({ status: 'bad', reason: data.badActorReason || 'Previous Issue' });
+                setFlagAsRisk(true); // Auto-check flag if they are already bad
+            } else {
+                setCustomerTrust({ status: 'good' });
+                setFlagAsRisk(false);
+            }
+        } else {
+            setCustomerTrust({ status: 'unknown' });
+            setFlagAsRisk(false);
+        }
+      } catch (e) {
+        console.error("Error looking up customer:", e);
       }
   };
 
@@ -154,7 +158,7 @@ const PosDashboard: React.FC = () => {
           await addDoc(collection(db, 'shops', currentUser.uid, 'pos_transactions'), newTx);
 
           // 2. Update/Save Customer Directory
-          if (customerPhone) {
+          if (customerPhone && customerPhone.length > 5) {
               const custRef = doc(db, 'shops', currentUser.uid, 'customers', customerPhone);
               
               const updateData: any = {

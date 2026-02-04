@@ -14,20 +14,34 @@ const Scan: React.FC = () => {
   const scannerRef = useRef<any>(null);
 
   useEffect(() => {
-    // Dynamically access Html5Qrcode to ensure it exists
-    const Html5Qrcode = (window as any).Html5Qrcode;
-    if (!Html5Qrcode) {
-      setError("Scanner library not loaded. Please refresh.");
-      return;
-    }
+    // Retry mechanism to ensure script is loaded
+    let attempts = 0;
+    const maxAttempts = 10;
+    
+    const initScanner = () => {
+        const Html5Qrcode = (window as any).Html5Qrcode;
+        if (!Html5Qrcode) {
+            if (attempts < maxAttempts) {
+                attempts++;
+                setTimeout(initScanner, 300); // Retry after 300ms
+                return;
+            }
+            setError("Scanner library not loaded. Please refresh.");
+            return;
+        }
 
-    const scannerId = "reader";
-    const qrCodeScanner = new Html5Qrcode(scannerId);
-    scannerRef.current = qrCodeScanner;
+        const scannerId = "reader";
+        // Clear existing instance if any
+        try {
+             if (scannerRef.current) {
+                 scannerRef.current.clear();
+             }
+        } catch(e) {}
 
-    const startScanning = async () => {
-      try {
-        await qrCodeScanner.start(
+        const qrCodeScanner = new Html5Qrcode(scannerId);
+        scannerRef.current = qrCodeScanner;
+
+        qrCodeScanner.start(
           { facingMode: "environment" },
           {
             fps: 10,
@@ -35,7 +49,6 @@ const Scan: React.FC = () => {
             aspectRatio: 1.0
           },
           async (decodedText: string) => {
-            // Success Callback
             if (isScanning) {
               await handleScan(decodedText);
             }
@@ -43,20 +56,22 @@ const Scan: React.FC = () => {
           (_errorMessage: string) => {
             // Parse error, ignore to avoid spamming console
           }
-        );
-      } catch (err) {
-        console.error("Camera start error", err);
-        setError("Camera permission denied or not available.");
-      }
+        ).catch((err: any) => {
+           console.error("Camera start error", err);
+           setError("Camera permission denied or not available.");
+        });
     };
 
-    startScanning();
+    // Give DOM a moment to render #reader
+    setTimeout(initScanner, 100);
 
     return () => {
       if (scannerRef.current) {
-        scannerRef.current.stop().then(() => {
-          scannerRef.current.clear();
-        }).catch((err: any) => console.error("Failed to stop scanner", err));
+        try {
+            scannerRef.current.stop().then(() => {
+              scannerRef.current.clear();
+            }).catch((err: any) => console.error("Failed to stop scanner", err));
+        } catch (e) { console.error("Scanner cleanup error", e); }
       }
     };
   }, []);
@@ -64,7 +79,9 @@ const Scan: React.FC = () => {
   const handleScan = async (qrContent: string) => {
     // 1. Pause scanning
     if (scannerRef.current) {
-        await scannerRef.current.pause();
+        try {
+            await scannerRef.current.pause();
+        } catch (e) {}
     }
     setIsScanning(false);
     
@@ -102,7 +119,11 @@ const Scan: React.FC = () => {
       console.error("Error looking up device", err);
       setError("Error checking card status.");
       setIsScanning(true);
-      if (scannerRef.current) scannerRef.current.resume();
+      if (scannerRef.current) {
+          try {
+              scannerRef.current.resume();
+          } catch(e) {}
+      }
     }
   };
 

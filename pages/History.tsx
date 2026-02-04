@@ -49,8 +49,6 @@ const History: React.FC = () => {
       const fetchedCharge: DeviceEntry[] = [];
       snapshot.forEach((doc) => fetchedCharge.push(doc.data() as DeviceEntry));
       setChargingData(fetchedCharge);
-      // We'll let POS load independently or wait for both? 
-      // For smoothness, we can check if both initialized, but setting state is fine
     });
 
     const posQ = query(
@@ -62,7 +60,7 @@ const History: React.FC = () => {
       const fetchedPos: PosTransaction[] = [];
       snapshot.forEach((doc) => fetchedPos.push(doc.data() as PosTransaction));
       setPosData(fetchedPos);
-      setLoading(false); // Assume done when POS loads, strictly we could track both
+      setLoading(false);
     });
 
     return () => {
@@ -133,6 +131,58 @@ const History: React.FC = () => {
     return `${diffMins} mins`;
   };
 
+  // --- DOWNLOAD HANDLER ---
+  const handleDownload = () => {
+    if (filteredList.length === 0) {
+      alert("No records to download for this month.");
+      return;
+    }
+
+    let csvContent = "";
+    const fileName = `ChargeSafe_${activeTab}_Report_${selectedMonth}.csv`;
+
+    if (activeTab === 'charging') {
+      // 1. CSV Header
+      csvContent += "Order ID,Status,Customer Name,Phone,Device Description,Type,Fee (NGN),Start Time,End Time,Duration\n";
+      
+      // 2. CSV Rows
+      (filteredList as DeviceEntry[]).forEach(row => {
+        const start = new Date(row.startTime).toLocaleString().replace(/,/g, ' ');
+        const end = row.endTime ? new Date(row.endTime).toLocaleString().replace(/,/g, ' ') : 'N/A';
+        const duration = calculateDuration(row.startTime, row.endTime);
+        const desc = row.description.replace(/,/g, ' '); // Clean commas
+        const name = row.customerName.replace(/,/g, ' ');
+
+        csvContent += `${row.id},${row.status},${name},${row.customerPhone || ''},${desc},${row.type},${row.fee},${start},${end},${duration}\n`;
+      });
+
+    } else {
+      // 1. CSV Header
+      csvContent += "Tx ID,Type,Amount (NGN),Fee (NGN),Total (NGN),Customer Name,Phone,Date & Time\n";
+      
+      // 2. CSV Rows
+      (filteredList as PosTransaction[]).forEach(row => {
+        const date = new Date(row.timestamp).toLocaleString().replace(/,/g, ' ');
+        const name = (row.customerName || 'Guest').replace(/,/g, ' ');
+        
+        csvContent += `${row.id},${row.type.toUpperCase()},${row.amount},${row.fee},${row.total},${name},${row.customerPhone || ''},${date}\n`;
+      });
+    }
+
+    // 3. Trigger Download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", fileName);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 pb-24">
       
@@ -156,7 +206,8 @@ const History: React.FC = () => {
              <ChevronDown size={14} className="text-slate-400" />
           </div>
           <button 
-            className="p-2 -mr-2 text-primary-400 hover:bg-slate-800 rounded-full"
+            onClick={handleDownload}
+            className="p-2 -mr-2 text-primary-400 hover:bg-slate-800 rounded-full active:scale-90 transition-transform"
             title="Download Report"
           >
             <Download size={20} />

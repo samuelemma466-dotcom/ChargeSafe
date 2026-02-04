@@ -12,6 +12,7 @@ import ShopList from './shops/ShopList'; // Import from shops
 import Scan from './pages/Scan';
 import Slots from './pages/Slots';
 import Profile from './pages/Profile';
+import Settings from './pages/Settings';
 import { useAuth } from './contexts/AuthContext';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -108,6 +109,15 @@ const App: React.FC = () => {
           element={
             <ProtectedRoute>
               <Profile />
+            </ProtectedRoute>
+          } 
+        />
+
+        <Route 
+          path="/settings" 
+          element={
+            <ProtectedRoute>
+              <Settings />
             </ProtectedRoute>
           } 
         />

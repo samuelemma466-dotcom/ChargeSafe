@@ -12,11 +12,9 @@ import {
   User, 
   Printer, 
   ScanLine, 
-  Wallet, 
   Phone, 
   Camera, 
   X, 
-  Share2, 
   Timer, 
   UserX, 
   AlertTriangle, 
@@ -26,7 +24,7 @@ import {
   Watch
 } from 'lucide-react';
 import QRCode from 'qrcode';
-import { doc, setDoc, getDoc, increment, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, setDoc, getDoc, increment } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { DeviceType, DeviceEntry, CustomerProfile } from '../types';
@@ -184,6 +182,12 @@ const AddDevice: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUser || isLoading) return;
+    
+    // Prevent submission if slot is occupied
+    if (slotStatus === 'occupied') {
+        alert("This slot is currently occupied. Please choose another slot or scan a different code.");
+        return;
+    }
 
     if (!description || !type) {
       alert("Please fill in device details.");
@@ -199,19 +203,20 @@ const AddDevice: React.FC = () => {
       // Generate QR for the Receipt
       const receiptQr = await QRCode.toDataURL(orderId, { margin: 1, color: { dark: '#000000', light: '#ffffff' } });
 
+      // FIX: Use NULL instead of undefined for Firebase compatibility
       const newDevice: DeviceEntry = {
         id: orderId,
-        qrId: qrId || undefined,
-        tagNumber: tagNumber || undefined,
+        qrId: qrId || null as any,
+        tagNumber: tagNumber || null as any,
         type: type as DeviceType,
         description,
         customerName: customerName || 'Guest',
-        customerPhone,
-        deviceImage,
+        customerPhone: customerPhone || null as any,
+        deviceImage: deviceImage || null as any,
         startTime: nowISO,
         fee: billingType === 'fixed' ? (parseFloat(fee) || 0) : 0,
         billingType,
-        hourlyRate: billingType === 'hourly' ? parseFloat(hourlyRate) : undefined,
+        hourlyRate: billingType === 'hourly' ? parseFloat(hourlyRate) : null as any,
         status: 'charging',
         qrCodeBase64: receiptQr
       };
@@ -256,7 +261,7 @@ const AddDevice: React.FC = () => {
 
     } catch (err) {
       console.error("Submit failed", err);
-      alert("Error checking in device. Try again.");
+      alert("Error checking in device. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -379,6 +384,13 @@ const AddDevice: React.FC = () => {
                    >
                      <X size={12} />
                    </button>
+
+                   {/* Occupied Overlay */}
+                   {slotStatus === 'occupied' && (
+                       <div className="absolute inset-0 bg-red-950/80 backdrop-blur-[2px] z-20 flex items-center justify-center">
+                           <span className="text-xs font-bold text-red-200 bg-red-900/80 px-2 py-1 rounded">OCCUPIED</span>
+                       </div>
+                   )}
                 </div>
               ) : (
                 <button 
@@ -599,9 +611,10 @@ const AddDevice: React.FC = () => {
             type="submit" 
             form="add-form"
             isLoading={isLoading}
-            className="h-14 text-lg font-black shadow-xl shadow-primary-500/20"
+            disabled={slotStatus === 'occupied'}
+            className="h-14 text-lg font-black shadow-xl shadow-primary-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
          >
-            Check In Device
+            {slotStatus === 'occupied' ? 'Slot Occupied' : 'Check In Device'}
          </Button>
       </div>
     </div>
