@@ -270,8 +270,8 @@ const AddDevice: React.FC = () => {
   // --- RENDER SUCCESS VIEW ---
   if (step === 'success' && registeredDevice) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col p-4 animate-in fade-in duration-500">
-        <div className="flex-1 flex flex-col items-center justify-center">
+      <div className="h-full bg-slate-950 flex flex-col p-4 animate-in fade-in duration-500 overflow-y-auto">
+        <div className="flex-1 flex flex-col items-center justify-center min-h-[500px]">
           
           {/* DIGITAL TICKET */}
           <div className="w-full max-w-sm bg-white rounded-3xl overflow-hidden shadow-2xl shadow-white/5 relative">
@@ -329,7 +329,7 @@ const AddDevice: React.FC = () => {
         </div>
 
         {/* Actions */}
-        <div className="mt-8 grid grid-cols-2 gap-4 max-w-sm mx-auto w-full">
+        <div className="mt-8 mb-safe grid grid-cols-2 gap-4 max-w-sm mx-auto w-full flex-none">
            <Button variant="secondary" onClick={() => window.print()} icon={Printer}>Print</Button>
            <Button onClick={() => navigate('/')} icon={CheckCircle}>Done</Button>
         </div>
@@ -339,10 +339,10 @@ const AddDevice: React.FC = () => {
 
   // --- RENDER FORM VIEW ---
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col text-slate-200">
+    <div className="h-full bg-slate-950 flex flex-col text-slate-200 relative overflow-hidden">
       
-      {/* HEADER */}
-      <div className="sticky top-0 z-20 bg-slate-950/95 backdrop-blur-md border-b border-slate-800 px-4 py-3 pt-safe flex items-center justify-between">
+      {/* HEADER (Fixed) */}
+      <div className="flex-none sticky top-0 z-20 bg-slate-950/95 backdrop-blur-md border-b border-slate-800 px-4 py-3 pt-safe flex items-center justify-between">
         <button onClick={() => navigate('/')} className="p-2 rounded-full bg-slate-900 text-slate-400 hover:text-white">
            <ArrowLeft size={20} />
         </button>
@@ -355,6 +355,7 @@ const AddDevice: React.FC = () => {
         <div className="w-9"></div> {/* Spacer */}
       </div>
 
+      {/* SCROLLABLE FORM */}
       <div className="flex-1 overflow-y-auto pb-32">
         <form id="add-form" onSubmit={handleSubmit} className="p-5 space-y-6">
            
@@ -604,8 +605,8 @@ const AddDevice: React.FC = () => {
         </form>
       </div>
 
-      {/* STICKY FOOTER */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-slate-950/80 backdrop-blur-xl border-t border-slate-800 pb-safe z-30">
+      {/* STICKY FOOTER (Fixed) */}
+      <div className="flex-none p-4 bg-slate-950/80 backdrop-blur-xl border-t border-slate-800 pb-safe z-30">
          <Button 
             fullWidth 
             type="submit" 

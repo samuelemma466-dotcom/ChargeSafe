@@ -296,17 +296,17 @@ const DeviceDetails: React.FC = () => {
     }
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-slate-950"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-500"></div></div>;
-  if (error || !device) return <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 p-6 text-center"><AlertCircle className="text-red-500 mb-4" size={48} /><h2 className="text-lg font-bold text-white">{error || 'Device Not Found'}</h2><Button className="mt-4" onClick={() => navigate('/')}>Back to Dashboard</Button></div>;
+  if (loading) return <div className="h-full flex items-center justify-center bg-slate-950"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-500"></div></div>;
+  if (error || !device) return <div className="h-full flex flex-col items-center justify-center bg-slate-950 p-6 text-center"><AlertCircle className="text-red-500 mb-4" size={48} /><h2 className="text-lg font-bold text-white">{error || 'Device Not Found'}</h2><Button className="mt-4" onClick={() => navigate('/')}>Back to Dashboard</Button></div>;
 
   const DeviceIcon = getIcon(device.type);
 
   return (
-    <div className="min-h-screen bg-slate-950 flex justify-center pb-6">
+    <div className="h-full bg-slate-950 flex flex-col relative overflow-hidden">
       
       {/* FULL SCREEN SCANNER OVERLAY */}
       {isScanning && (
-          <div className="fixed inset-0 z-[100] bg-black flex flex-col">
+          <div className="fixed inset-0 z-[100] bg-black flex flex-col h-[100dvh]">
               <div className="p-4 pt-safe flex justify-between items-center z-20">
                   <button onClick={stopScanner} className="p-3 bg-white/20 rounded-full text-white backdrop-blur-sm">
                       <X size={24} />
@@ -339,7 +339,8 @@ const DeviceDetails: React.FC = () => {
           </div>
       )}
 
-      <div className="w-full max-w-lg bg-slate-950 md:my-8 md:rounded-3xl md:shadow-lg min-h-screen md:min-h-fit flex flex-col">
+      {/* Main Container */}
+      <div className="flex-1 flex flex-col h-full bg-slate-950 md:rounded-3xl md:shadow-lg md:max-w-lg md:mx-auto md:my-8">
         
         {/* TOAST NOTIFICATION */}
         {toast && (
@@ -351,8 +352,8 @@ const DeviceDetails: React.FC = () => {
           </div>
         )}
 
-        {/* HEADER */}
-        <div className="sticky top-0 bg-slate-950/95 backdrop-blur-sm z-10 px-6 py-4 border-b border-slate-800 flex items-center justify-between md:rounded-t-3xl">
+        {/* HEADER (Fixed) */}
+        <div className="flex-none sticky top-0 bg-slate-950/95 backdrop-blur-sm z-10 px-6 py-4 border-b border-slate-800 flex items-center justify-between md:rounded-t-3xl pt-safe">
           <button 
             onClick={() => navigate('/')} 
             className="p-3 -ml-3 rounded-full hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
@@ -368,6 +369,7 @@ const DeviceDetails: React.FC = () => {
           </button>
         </div>
 
+        {/* SCROLLABLE CONTENT */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           
           {/* 1. STATUS & ID CARD */}
@@ -512,8 +514,8 @@ const DeviceDetails: React.FC = () => {
           )}
         </div>
 
-        {/* STICKY BOTTOM ACTIONS */}
-        <div className="p-6 bg-slate-950 border-t border-slate-800 md:rounded-b-3xl">
+        {/* STICKY BOTTOM ACTIONS (Fixed at bottom of flex container) */}
+        <div className="flex-none p-6 bg-slate-950 border-t border-slate-800 md:rounded-b-3xl pb-safe">
           <div className="grid grid-cols-1 gap-3">
             {device.status === 'charging' && (
               <Button fullWidth onClick={markReady} className="bg-slate-800 hover:bg-slate-700 border border-slate-700 h-14 text-lg">

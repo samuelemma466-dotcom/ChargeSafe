@@ -92,9 +92,9 @@ const Customers: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 pb-24">
+    <div className="h-full flex flex-col bg-slate-950 relative overflow-hidden">
       {/* Header */}
-      <div className="sticky top-0 bg-slate-950/95 backdrop-blur-sm z-10 px-6 py-4 border-b border-slate-800">
+      <div className="flex-none sticky top-0 bg-slate-950/95 backdrop-blur-sm z-10 px-6 py-4 border-b border-slate-800 pt-safe">
         <h1 className="text-xl font-black text-white mb-4">Customer Directory</h1>
         <Input 
           placeholder="Search name or phone..." 
@@ -106,7 +106,7 @@ const Customers: React.FC = () => {
       </div>
 
       {/* List */}
-      <div className="p-6 space-y-4">
+      <div className="flex-1 overflow-y-auto p-6 space-y-4 pb-24">
         {loading ? (
            Array(5).fill(0).map((_, i) => (
              <div key={i} className="flex items-center space-x-4">

@@ -128,7 +128,7 @@ const Scan: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-black flex flex-col">
+    <div className="h-full bg-black flex flex-col relative overflow-hidden">
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-20 p-4 pt-safe flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent">
         <button 

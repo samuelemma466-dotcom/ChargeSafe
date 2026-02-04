@@ -35,7 +35,7 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col justify-center items-center p-6">
+    <div className="h-full bg-slate-950 flex flex-col justify-center items-center p-6 overflow-y-auto">
       
       <div className="text-center mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
         <div className="w-20 h-20 bg-primary-600 rounded-3xl rotate-3 flex items-center justify-center mx-auto mb-6 shadow-xl shadow-primary-500/20">

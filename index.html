@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>ChargeSafe</title>
     
     <!-- PWA Configuration -->
@@ -75,10 +75,19 @@
         --color-black: #000000;
       }
 
+      html, body, #root {
+        height: 100%;
+        height: 100dvh; /* Dynamic Viewport Height for Mobile */
+        overflow: hidden; /* Prevent body scroll, handle in containers */
+        margin: 0;
+        padding: 0;
+      }
+
       body {
         -webkit-tap-highlight-color: transparent;
         background-color: var(--slate-950);
         color: var(--slate-50);
+        overscroll-behavior-y: none; /* Prevent pull-to-refresh on body */
       }
       .hide-scrollbar::-webkit-scrollbar {
         display: none;

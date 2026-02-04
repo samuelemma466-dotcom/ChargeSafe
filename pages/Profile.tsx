@@ -131,7 +131,7 @@ const Profile: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 pb-24">
+    <div className="h-full flex flex-col bg-slate-950 relative overflow-hidden">
       
       {/* Toast */}
       {toast && (
@@ -144,7 +144,7 @@ const Profile: React.FC = () => {
       )}
 
       {/* Header */}
-      <div className="sticky top-0 bg-slate-950/95 backdrop-blur-sm z-10 px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+      <div className="flex-none sticky top-0 bg-slate-950/95 backdrop-blur-sm z-10 px-6 py-4 border-b border-slate-800 flex items-center justify-between pt-safe">
         <button 
           onClick={() => navigate('/')} 
           className="p-3 -ml-3 rounded-full hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
@@ -155,221 +155,222 @@ const Profile: React.FC = () => {
         <div className="w-10"></div>
       </div>
 
-      <div className="p-6 max-w-lg mx-auto">
+      <div className="flex-1 overflow-y-auto p-6 pb-24">
+        <div className="max-w-lg mx-auto">
         
-        {/* VIEW MODE: DASHBOARD */}
-        {!isEditing && shopDetails ? (
-          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
-             
-             {/* 1. Shop Identity Card (Credit Card Style) */}
-             <div className="relative w-full aspect-[1.586/1] rounded-3xl overflow-hidden shadow-2xl shadow-blue-900/20 group transition-transform active:scale-[0.98]">
-                {/* Gradient Background */}
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-indigo-700 to-slate-900"></div>
-                
-                {/* Pattern Overlay */}
-                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20"></div>
-                
-                {/* Content */}
-                <div className="absolute inset-0 p-6 flex flex-col justify-between">
-                    <div className="flex justify-between items-start">
-                        <div className="bg-white/10 backdrop-blur-md border border-white/20 p-2 rounded-xl">
-                            <Store size={24} className="text-white" />
-                        </div>
-                        <div className="text-right">
-                            <p className="text-[10px] font-bold text-blue-200 uppercase tracking-widest">Shop ID</p>
-                            <p className="text-white font-mono font-bold tracking-wider">{shopDetails.uid?.slice(0, 8).toUpperCase()}</p>
-                        </div>
-                    </div>
+          {/* VIEW MODE: DASHBOARD */}
+          {!isEditing && shopDetails ? (
+            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
+              
+              {/* 1. Shop Identity Card (Credit Card Style) */}
+              <div className="relative w-full aspect-[1.586/1] rounded-3xl overflow-hidden shadow-2xl shadow-blue-900/20 group transition-transform active:scale-[0.98]">
+                  {/* Gradient Background */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-indigo-700 to-slate-900"></div>
+                  
+                  {/* Pattern Overlay */}
+                  <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20"></div>
+                  
+                  {/* Content */}
+                  <div className="absolute inset-0 p-6 flex flex-col justify-between">
+                      <div className="flex justify-between items-start">
+                          <div className="bg-white/10 backdrop-blur-md border border-white/20 p-2 rounded-xl">
+                              <Store size={24} className="text-white" />
+                          </div>
+                          <div className="text-right">
+                              <p className="text-[10px] font-bold text-blue-200 uppercase tracking-widest">Shop ID</p>
+                              <p className="text-white font-mono font-bold tracking-wider">{shopDetails.uid?.slice(0, 8).toUpperCase()}</p>
+                          </div>
+                      </div>
 
-                    <div>
-                        <div className="flex items-center space-x-2 mb-1">
-                            <h2 className="text-2xl font-black text-white tracking-tight leading-none">{shopDetails.shopName}</h2>
-                            <ShieldCheck size={18} className="text-blue-300" />
-                        </div>
-                        <div className="flex justify-between items-end">
-                            <p className="text-blue-200 text-xs font-medium flex items-center">
-                                <MapPin size={12} className="mr-1" /> {shopDetails.city}
-                            </p>
-                            <div className="flex items-center space-x-1 bg-green-500/20 backdrop-blur-sm px-2 py-1 rounded-lg border border-green-400/30">
-                                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                                <span className="text-[10px] font-bold text-green-100 uppercase">Online</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-             </div>
-
-             {/* 2. Quick Stats Grid */}
-             <div className="grid grid-cols-3 gap-3">
-                 <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex flex-col items-center justify-center text-center">
-                     <div className="w-8 h-8 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center mb-2">
-                         <Zap size={16} />
-                     </div>
-                     <span className="text-2xl font-black text-white">{activeCount}</span>
-                     <span className="text-[10px] text-slate-500 font-bold uppercase">Active</span>
-                 </div>
-                 <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex flex-col items-center justify-center text-center">
-                     <div className="w-8 h-8 rounded-full bg-green-500/10 text-green-400 flex items-center justify-center mb-2">
-                         <Hash size={16} />
-                     </div>
-                     <span className="text-2xl font-black text-white">{shopDetails.slots || 0}</span>
-                     <span className="text-[10px] text-slate-500 font-bold uppercase">Slots</span>
-                 </div>
-                 <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex flex-col items-center justify-center text-center">
-                     <div className="w-8 h-8 rounded-full bg-purple-500/10 text-purple-400 flex items-center justify-center mb-2">
-                         <Users size={16} />
-                     </div>
-                     <span className="text-2xl font-black text-white">{staffCount}</span>
-                     <span className="text-[10px] text-slate-500 font-bold uppercase">Staff</span>
-                 </div>
-             </div>
-
-             {/* 3. Settings & Actions List */}
-             <div className="space-y-4">
-                 <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider ml-1">Configuration</h3>
-                 
-                 {/* Main Edit Button */}
-                 <button 
-                    onClick={() => setIsEditing(true)}
-                    className="w-full bg-slate-900 hover:bg-slate-800 p-4 rounded-2xl border border-slate-800 flex items-center justify-between transition-colors group"
-                 >
-                     <div className="flex items-center">
-                         <div className="p-2 bg-blue-500/10 rounded-xl text-blue-400 mr-4 group-hover:bg-blue-500/20 transition-colors">
-                             <Edit2 size={20} />
-                         </div>
-                         <div className="text-left">
-                             <p className="text-white font-bold">Edit Profile</p>
-                             <p className="text-xs text-slate-500">Update name, address, phone</p>
-                         </div>
-                     </div>
-                     <ChevronRight size={18} className="text-slate-600" />
-                 </button>
-
-                 {/* Settings Link */}
-                 <button 
-                    onClick={() => navigate('/settings')}
-                    className="w-full bg-slate-900 hover:bg-slate-800 p-4 rounded-2xl border border-slate-800 flex items-center justify-between transition-colors group"
-                 >
-                     <div className="flex items-center">
-                         <div className="p-2 bg-slate-800 rounded-xl text-slate-400 mr-4 group-hover:bg-slate-700 transition-colors">
-                             <SettingsIcon size={20} />
-                         </div>
-                         <div className="text-left">
-                             <p className="text-white font-bold">App Settings</p>
-                             <p className="text-xs text-slate-500">Theme, Currency, Reset Data</p>
-                         </div>
-                     </div>
-                     <ChevronRight size={18} className="text-slate-600" />
-                 </button>
-
-                 {/* Support Link */}
-                 <button className="w-full bg-slate-900 hover:bg-slate-800 p-4 rounded-2xl border border-slate-800 flex items-center justify-between transition-colors">
-                     <div className="flex items-center">
-                         <HelpCircle size={20} className="text-slate-400 mr-3" />
-                         <span className="text-sm font-medium text-slate-200">Help & Support</span>
-                     </div>
-                     <ChevronRight size={18} className="text-slate-600" />
-                 </button>
-             </div>
-
-             <div className="pt-4">
-                <Button 
-                  variant="danger" 
-                  fullWidth 
-                  onClick={handleLogout}
-                  icon={LogOut}
-                  className="bg-red-500/10 text-red-500 hover:bg-red-500/20 shadow-none border border-red-500/20"
-                >
-                  Sign Out
-                </Button>
-                <p className="text-center text-xs text-slate-600 mt-4 font-mono">ChargeSafe v1.3.0</p>
-             </div>
-          </div>
-        ) : (
-          /* EDIT MODE: FORM */
-          <form onSubmit={handleSave} className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
-             <div className="flex justify-between items-center mb-2">
-                <h3 className="text-lg font-bold text-white">Edit Shop Details</h3>
-                <button 
-                  type="button" 
-                  onClick={() => setIsEditing(false)} 
-                  className="p-2 bg-slate-800 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
-                >
-                  <X size={20} />
-                </button>
-             </div>
-
-             <div className="space-y-5">
-                <Input
-                  label="Shop Name"
-                  name="shopName"
-                  value={formData.shopName}
-                  onChange={handleChange}
-                  icon={Store}
-                  required
-                />
-                
-                <Input
-                  label="Phone Number"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  icon={Phone}
-                  placeholder="e.g. 080..."
-                />
-
-                <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 space-y-4">
-                  <div className="flex items-center text-slate-500 mb-1">
-                      <MapPin size={16} className="mr-2" />
-                      <span className="text-xs font-bold uppercase">Location Data</span>
+                      <div>
+                          <div className="flex items-center space-x-2 mb-1">
+                              <h2 className="text-2xl font-black text-white tracking-tight leading-none">{shopDetails.shopName}</h2>
+                              <ShieldCheck size={18} className="text-blue-300" />
+                          </div>
+                          <div className="flex justify-between items-end">
+                              <p className="text-blue-200 text-xs font-medium flex items-center">
+                                  <MapPin size={12} className="mr-1" /> {shopDetails.city}
+                              </p>
+                              <div className="flex items-center space-x-1 bg-green-500/20 backdrop-blur-sm px-2 py-1 rounded-lg border border-green-400/30">
+                                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                                  <span className="text-[10px] font-bold text-green-100 uppercase">Online</span>
+                              </div>
+                          </div>
+                      </div>
                   </div>
-                  <Input
-                    label="City"
-                    name="city"
-                    value={formData.city}
-                    onChange={handleChange}
-                    required
-                    className="bg-slate-950 border-slate-800"
-                  />
-                  <Input
-                    label="Street Address"
-                    name="street"
-                    value={formData.street}
-                    onChange={handleChange}
-                    required
-                    className="bg-slate-950 border-slate-800"
-                  />
-                  <Input
-                    label="Landmark"
-                    name="landmark"
-                    value={formData.landmark}
-                    onChange={handleChange}
-                    className="bg-slate-950 border-slate-800"
-                  />
-                </div>
-             </div>
+              </div>
 
-             <div className="pt-4 flex space-x-3">
-                <Button 
-                   type="button" 
-                   variant="outline" 
-                   fullWidth 
-                   onClick={() => setIsEditing(false)}
-                >
-                   Cancel
-                </Button>
-                <Button 
-                   type="submit" 
-                   fullWidth 
-                   isLoading={loading}
-                   icon={Save}
-                >
-                   Save Changes
-                </Button>
-             </div>
-          </form>
-        )}
+              {/* 2. Quick Stats Grid */}
+              <div className="grid grid-cols-3 gap-3">
+                  <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex flex-col items-center justify-center text-center">
+                      <div className="w-8 h-8 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center mb-2">
+                          <Zap size={16} />
+                      </div>
+                      <span className="text-2xl font-black text-white">{activeCount}</span>
+                      <span className="text-[10px] text-slate-500 font-bold uppercase">Active</span>
+                  </div>
+                  <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex flex-col items-center justify-center text-center">
+                      <div className="w-8 h-8 rounded-full bg-green-500/10 text-green-400 flex items-center justify-center mb-2">
+                          <Hash size={16} />
+                      </div>
+                      <span className="text-2xl font-black text-white">{shopDetails.slots || 0}</span>
+                      <span className="text-[10px] text-slate-500 font-bold uppercase">Slots</span>
+                  </div>
+                  <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex flex-col items-center justify-center text-center">
+                      <div className="w-8 h-8 rounded-full bg-purple-500/10 text-purple-400 flex items-center justify-center mb-2">
+                          <Users size={16} />
+                      </div>
+                      <span className="text-2xl font-black text-white">{staffCount}</span>
+                      <span className="text-[10px] text-slate-500 font-bold uppercase">Staff</span>
+                  </div>
+              </div>
 
+              {/* 3. Settings & Actions List */}
+              <div className="space-y-4">
+                  <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider ml-1">Configuration</h3>
+                  
+                  {/* Main Edit Button */}
+                  <button 
+                      onClick={() => setIsEditing(true)}
+                      className="w-full bg-slate-900 hover:bg-slate-800 p-4 rounded-2xl border border-slate-800 flex items-center justify-between transition-colors group"
+                  >
+                      <div className="flex items-center">
+                          <div className="p-2 bg-blue-500/10 rounded-xl text-blue-400 mr-4 group-hover:bg-blue-500/20 transition-colors">
+                              <Edit2 size={20} />
+                          </div>
+                          <div className="text-left">
+                              <p className="text-white font-bold">Edit Profile</p>
+                              <p className="text-xs text-slate-500">Update name, address, phone</p>
+                          </div>
+                      </div>
+                      <ChevronRight size={18} className="text-slate-600" />
+                  </button>
+
+                  {/* Settings Link */}
+                  <button 
+                      onClick={() => navigate('/settings')}
+                      className="w-full bg-slate-900 hover:bg-slate-800 p-4 rounded-2xl border border-slate-800 flex items-center justify-between transition-colors group"
+                  >
+                      <div className="flex items-center">
+                          <div className="p-2 bg-slate-800 rounded-xl text-slate-400 mr-4 group-hover:bg-slate-700 transition-colors">
+                              <SettingsIcon size={20} />
+                          </div>
+                          <div className="text-left">
+                              <p className="text-white font-bold">App Settings</p>
+                              <p className="text-xs text-slate-500">Theme, Currency, Reset Data</p>
+                          </div>
+                      </div>
+                      <ChevronRight size={18} className="text-slate-600" />
+                  </button>
+
+                  {/* Support Link */}
+                  <button className="w-full bg-slate-900 hover:bg-slate-800 p-4 rounded-2xl border border-slate-800 flex items-center justify-between transition-colors">
+                      <div className="flex items-center">
+                          <HelpCircle size={20} className="text-slate-400 mr-3" />
+                          <span className="text-sm font-medium text-slate-200">Help & Support</span>
+                      </div>
+                      <ChevronRight size={18} className="text-slate-600" />
+                  </button>
+              </div>
+
+              <div className="pt-4">
+                  <Button 
+                    variant="danger" 
+                    fullWidth 
+                    onClick={handleLogout}
+                    icon={LogOut}
+                    className="bg-red-500/10 text-red-500 hover:bg-red-500/20 shadow-none border border-red-500/20"
+                  >
+                    Sign Out
+                  </Button>
+                  <p className="text-center text-xs text-slate-600 mt-4 font-mono">ChargeSafe v1.3.0</p>
+              </div>
+            </div>
+          ) : (
+            /* EDIT MODE: FORM */
+            <form onSubmit={handleSave} className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
+              <div className="flex justify-between items-center mb-2">
+                  <h3 className="text-lg font-bold text-white">Edit Shop Details</h3>
+                  <button 
+                    type="button" 
+                    onClick={() => setIsEditing(false)} 
+                    className="p-2 bg-slate-800 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
+                  >
+                    <X size={20} />
+                  </button>
+              </div>
+
+              <div className="space-y-5">
+                  <Input
+                    label="Shop Name"
+                    name="shopName"
+                    value={formData.shopName}
+                    onChange={handleChange}
+                    icon={Store}
+                    required
+                  />
+                  
+                  <Input
+                    label="Phone Number"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    icon={Phone}
+                    placeholder="e.g. 080..."
+                  />
+
+                  <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 space-y-4">
+                    <div className="flex items-center text-slate-500 mb-1">
+                        <MapPin size={16} className="mr-2" />
+                        <span className="text-xs font-bold uppercase">Location Data</span>
+                    </div>
+                    <Input
+                      label="City"
+                      name="city"
+                      value={formData.city}
+                      onChange={handleChange}
+                      required
+                      className="bg-slate-950 border-slate-800"
+                    />
+                    <Input
+                      label="Street Address"
+                      name="street"
+                      value={formData.street}
+                      onChange={handleChange}
+                      required
+                      className="bg-slate-950 border-slate-800"
+                    />
+                    <Input
+                      label="Landmark"
+                      name="landmark"
+                      value={formData.landmark}
+                      onChange={handleChange}
+                      className="bg-slate-950 border-slate-800"
+                    />
+                  </div>
+              </div>
+
+              <div className="pt-4 flex space-x-3">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    fullWidth 
+                    onClick={() => setIsEditing(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    fullWidth 
+                    isLoading={loading}
+                    icon={Save}
+                  >
+                    Save Changes
+                  </Button>
+              </div>
+            </form>
+          )}
+        </div>
       </div>
       
       <BottomNav />

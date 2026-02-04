@@ -184,10 +184,10 @@ const History: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 pb-24">
+    <div className="h-full flex flex-col bg-slate-950 relative overflow-hidden">
       
-      {/* HEADER */}
-      <div className="sticky top-0 bg-slate-950/95 backdrop-blur-sm z-10 px-6 py-4 border-b border-slate-800">
+      {/* HEADER (Fixed) */}
+      <div className="flex-none sticky top-0 bg-slate-950/95 backdrop-blur-sm z-10 px-6 py-4 border-b border-slate-800 pt-safe">
         <div className="flex items-center justify-between mb-4">
           <button 
             onClick={() => navigate('/')} 
@@ -244,127 +244,130 @@ const History: React.FC = () => {
         </div>
       </div>
 
-      {/* MONTHLY SUMMARY CARD */}
-      <div className="p-6 pb-2">
-         <div className="bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700 rounded-3xl p-6 text-white shadow-xl shadow-black/20">
-            <h2 className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">{stats.monthName} Revenue</h2>
-            <div className="flex items-end space-x-2 mb-6">
-                <span className="text-4xl font-black tracking-tight text-white">₦{stats.revenue.toLocaleString()}</span>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4 border-t border-slate-700 pt-4">
-               <div>
-                  <p className="text-slate-400 text-[10px] uppercase mb-1">Charging</p>
-                  <p className="font-bold text-lg">₦{stats.chargeRevenue.toLocaleString()}</p>
-               </div>
-               <div>
-                  <p className="text-slate-400 text-[10px] uppercase mb-1">POS Fees</p>
-                  <p className="font-bold text-lg">₦{stats.posRevenue.toLocaleString()}</p>
-               </div>
-            </div>
-         </div>
-      </div>
-
-      {/* RECORDS LIST */}
-      <main className="px-6 py-4">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-sm font-semibold text-slate-500">
-              {activeTab === 'charging' ? 'Device Logs' : 'Transaction Logs'}
-          </h2>
-          <div className="text-xs text-slate-400 bg-slate-900 border border-slate-800 px-2 py-1 rounded-md">
-            {filteredList.length} entries
-          </div>
-        </div>
-
-        {loading ? (
-           <div className="space-y-4">
-             <Skeleton className="h-24 w-full" />
-             <Skeleton className="h-24 w-full" />
-           </div>
-        ) : (
-          <div className="space-y-4">
-            {filteredList.length === 0 ? (
-              <div className="text-center py-16 bg-slate-900 rounded-3xl border border-dashed border-slate-800">
-                <div className="mx-auto w-12 h-12 bg-slate-800 rounded-full flex items-center justify-center mb-3">
-                  <Filter className="text-slate-600" />
+      {/* MAIN SCROLLABLE AREA */}
+      <main className="flex-1 overflow-y-auto pb-24">
+          {/* MONTHLY SUMMARY CARD */}
+          <div className="p-6 pb-2">
+             <div className="bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700 rounded-3xl p-6 text-white shadow-xl shadow-black/20">
+                <h2 className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">{stats.monthName} Revenue</h2>
+                <div className="flex items-end space-x-2 mb-6">
+                    <span className="text-4xl font-black tracking-tight text-white">₦{stats.revenue.toLocaleString()}</span>
                 </div>
-                <p className="text-slate-500 font-medium">No records found</p>
+                
+                <div className="grid grid-cols-2 gap-4 border-t border-slate-700 pt-4">
+                   <div>
+                      <p className="text-slate-400 text-[10px] uppercase mb-1">Charging</p>
+                      <p className="font-bold text-lg">₦{stats.chargeRevenue.toLocaleString()}</p>
+                   </div>
+                   <div>
+                      <p className="text-slate-400 text-[10px] uppercase mb-1">POS Fees</p>
+                      <p className="font-bold text-lg">₦{stats.posRevenue.toLocaleString()}</p>
+                   </div>
+                </div>
+             </div>
+          </div>
+
+          {/* RECORDS LIST */}
+          <div className="px-6 py-4">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-sm font-semibold text-slate-500">
+                  {activeTab === 'charging' ? 'Device Logs' : 'Transaction Logs'}
+              </h2>
+              <div className="text-xs text-slate-400 bg-slate-900 border border-slate-800 px-2 py-1 rounded-md">
+                {filteredList.length} entries
               </div>
+            </div>
+
+            {loading ? (
+               <div className="space-y-4">
+                 <Skeleton className="h-24 w-full" />
+                 <Skeleton className="h-24 w-full" />
+               </div>
             ) : (
-                activeTab === 'charging' ? (
-                    // CHARGING LIST
-                    (filteredList as DeviceEntry[]).map((record) => {
-                        const DeviceIcon = getIcon(record.type);
-                        return (
-                        <div key={record.id} className="bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow-sm hover:border-slate-700 transition-colors">
-                            <div className="flex justify-between items-start mb-3 border-b border-slate-800 pb-2">
-                            <div className="flex items-center space-x-2">
-                                <span className="text-xs font-mono font-bold text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded">
-                                {record.id}
-                                </span>
-                                <Badge variant="gray" className="text-[10px]">
-                                {record.status === 'collected' ? 'Collected' : 'Active'}
-                                </Badge>
-                            </div>
-                            <span className="text-primary-400 font-bold">₦{record.fee}</span>
-                            </div>
-
-                            <div className="flex items-start space-x-3 mb-3">
-                            <div className="h-10 w-10 bg-slate-800 rounded-full flex items-center justify-center text-slate-500 flex-shrink-0">
-                                <DeviceIcon size={20} />
-                            </div>
-                            <div>
-                                <h3 className="font-bold text-white text-sm">{record.customerName}</h3>
-                                <p className="text-xs text-slate-400">{record.description}</p>
-                            </div>
-                            </div>
-
-                            <div className="flex justify-between items-center text-xs text-slate-500 bg-slate-950/50 p-2 rounded-lg border border-slate-800">
-                            <div className="flex items-center space-x-1">
-                                <Calendar size={12} />
-                                <span>{new Date(record.startTime).toLocaleDateString()}</span>
-                            </div>
-                            <div className="flex items-center space-x-1">
-                                <Clock size={12} />
-                                <span>Time: <span className="text-slate-400 font-medium">{calculateDuration(record.startTime, record.endTime)}</span></span>
-                            </div>
-                            </div>
-                        </div>
-                        );
-                    })
+              <div className="space-y-4">
+                {filteredList.length === 0 ? (
+                  <div className="text-center py-16 bg-slate-900 rounded-3xl border border-dashed border-slate-800">
+                    <div className="mx-auto w-12 h-12 bg-slate-800 rounded-full flex items-center justify-center mb-3">
+                      <Filter className="text-slate-600" />
+                    </div>
+                    <p className="text-slate-500 font-medium">No records found</p>
+                  </div>
                 ) : (
-                    // POS LIST
-                    (filteredList as PosTransaction[]).map((tx) => (
-                        <div key={tx.id} className="bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow-sm flex flex-col">
-                            <div className="flex justify-between items-start mb-2">
-                                <div className="flex items-center">
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${
-                                        tx.type === 'withdrawal' ? 'bg-red-500/10 text-red-500' : 'bg-green-500/10 text-green-500'
-                                    }`}>
-                                        {tx.type === 'withdrawal' ? <ArrowUpRight size={16} /> : <ArrowDownLeft size={16} />}
-                                    </div>
-                                    <div>
-                                        <p className="font-bold text-white text-sm">{tx.customerName}</p>
-                                        <p className="text-[10px] text-slate-500">
-                                            {new Date(tx.timestamp).toLocaleString()}
-                                        </p>
-                                    </div>
+                    activeTab === 'charging' ? (
+                        // CHARGING LIST
+                        (filteredList as DeviceEntry[]).map((record) => {
+                            const DeviceIcon = getIcon(record.type);
+                            return (
+                            <div key={record.id} className="bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow-sm hover:border-slate-700 transition-colors">
+                                <div className="flex justify-between items-start mb-3 border-b border-slate-800 pb-2">
+                                <div className="flex items-center space-x-2">
+                                    <span className="text-xs font-mono font-bold text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded">
+                                    {record.id}
+                                    </span>
+                                    <Badge variant="gray" className="text-[10px]">
+                                    {record.status === 'collected' ? 'Collected' : 'Active'}
+                                    </Badge>
                                 </div>
-                                <div className="text-right">
-                                    <p className={`font-black text-sm ${
-                                        tx.type === 'withdrawal' ? 'text-slate-200' : 'text-green-400'
-                                    }`}>
-                                        ₦{tx.amount.toLocaleString()}
-                                    </p>
-                                    <p className="text-[10px] text-slate-500">Fee: ₦{tx.fee}</p>
+                                <span className="text-primary-400 font-bold">₦{record.fee}</span>
+                                </div>
+
+                                <div className="flex items-start space-x-3 mb-3">
+                                <div className="h-10 w-10 bg-slate-800 rounded-full flex items-center justify-center text-slate-500 flex-shrink-0">
+                                    <DeviceIcon size={20} />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-white text-sm">{record.customerName}</h3>
+                                    <p className="text-xs text-slate-400">{record.description}</p>
+                                </div>
+                                </div>
+
+                                <div className="flex justify-between items-center text-xs text-slate-500 bg-slate-950/50 p-2 rounded-lg border border-slate-800">
+                                <div className="flex items-center space-x-1">
+                                    <Calendar size={12} />
+                                    <span>{new Date(record.startTime).toLocaleDateString()}</span>
+                                </div>
+                                <div className="flex items-center space-x-1">
+                                    <Clock size={12} />
+                                    <span>Time: <span className="text-slate-400 font-medium">{calculateDuration(record.startTime, record.endTime)}</span></span>
+                                </div>
                                 </div>
                             </div>
-                        </div>
-                    ))
-                )
+                            );
+                        })
+                    ) : (
+                        // POS LIST
+                        (filteredList as PosTransaction[]).map((tx) => (
+                            <div key={tx.id} className="bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow-sm flex flex-col">
+                                <div className="flex justify-between items-start mb-2">
+                                    <div className="flex items-center">
+                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${
+                                            tx.type === 'withdrawal' ? 'bg-red-500/10 text-red-500' : 'bg-green-500/10 text-green-500'
+                                        }`}>
+                                            {tx.type === 'withdrawal' ? <ArrowUpRight size={16} /> : <ArrowDownLeft size={16} />}
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-white text-sm">{tx.customerName}</p>
+                                            <p className="text-[10px] text-slate-500">
+                                                {new Date(tx.timestamp).toLocaleString()}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className={`font-black text-sm ${
+                                            tx.type === 'withdrawal' ? 'text-slate-200' : 'text-green-400'
+                                        }`}>
+                                            ₦{tx.amount.toLocaleString()}
+                                        </p>
+                                        <p className="text-[10px] text-slate-500">Fee: ₦{tx.fee}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        ))
+                    )
+                )}
+              </div>
             )}
           </div>
-        )}
       </main>
       
       <BottomNav />

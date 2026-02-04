@@ -91,10 +91,10 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className={`min-h-screen pb-24 relative transition-colors duration-500 bg-slate-950`}>
+    <div className="h-full flex flex-col bg-slate-950 relative overflow-hidden transition-colors duration-500">
       
-      {/* HEADER SECTION */}
-      <header className={`sticky top-0 z-10 border-b shadow-lg shadow-black/20 transition-colors duration-300 bg-slate-950/90 backdrop-blur-md border-slate-800`}>
+      {/* HEADER SECTION (Fixed at Top) */}
+      <header className="flex-none z-10 border-b shadow-lg shadow-black/20 transition-colors duration-300 bg-slate-950/90 backdrop-blur-md border-slate-800">
         <div className="px-5 pt-safe pt-6 pb-4">
           <div className="flex justify-between items-center mb-5">
             <div>
@@ -140,7 +140,7 @@ const Dashboard: React.FC = () => {
                     icon={Search} 
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="bg-slate-900 border-slate-800 focus:bg-slate-800 h-12 rounded-xl text-base"
+                    className="bg-slate-900 border-slate-800 focus:bg-slate-800 h-12 rounded-xl text-base mb-0"
                     />
                 </div>
                 {/* TABS */}
@@ -179,8 +179,8 @@ const Dashboard: React.FC = () => {
         </div>
       </header>
 
-      {/* MAIN CONTENT AREA */}
-      <main className={`${mode === 'charging' ? 'px-5 py-6' : 'p-0'}`}>
+      {/* MAIN CONTENT AREA (Scrollable) */}
+      <main className={`flex-1 overflow-y-auto hide-scrollbar ${mode === 'charging' ? 'px-5 py-6 pb-28' : 'p-0 pb-24'}`}>
         
         {mode === 'pos' ? (
             <PosDashboard />
@@ -295,7 +295,7 @@ const Dashboard: React.FC = () => {
         )}
       </main>
 
-      {/* FAB - ADD BUTTON (Only on Active Charging Tab) */}
+      {/* FAB - ADD BUTTON (Fixed position relative to viewport) */}
       {mode === 'charging' && activeTab === 'active' && (
         <button
           onClick={() => navigate('/add')}
@@ -305,7 +305,7 @@ const Dashboard: React.FC = () => {
         </button>
       )}
 
-      {/* BOTTOM NAV */}
+      {/* BOTTOM NAV (Fixed at bottom) */}
       <BottomNav />
     </div>
   );
